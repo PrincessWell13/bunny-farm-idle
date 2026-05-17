@@ -43,7 +43,50 @@ last_updated: ""
 # interface: how other systems access this state (read-only property, method call,
 #   signal, shared resource, etc.) — this is the contract other ADRs depend on.
 
-state_ownership: []
+state_ownership:
+  - state: player_data_tree
+    status: active
+    owner_system: GameState
+    adr: docs/architecture/adr-0001-autoload-boot-sequence.md
+    interface: "GameState.rabbits, GameState.hutches, GameState.prestige_count, GameState.collection_registry (read-only from outside); mutate only via GameState methods + mark_dirty()"
+    write_access: GameState-only
+    referenced_by:
+      - docs/architecture/adr-0001-autoload-boot-sequence.md
+    added: 2026-05-16
+    revised: ""
+
+  - state: currency_ledgers
+    status: active
+    owner_system: EconomyManager
+    adr: docs/architecture/adr-0001-autoload-boot-sequence.md
+    interface: "EconomyManager.add(currency, amount), EconomyManager.spend(currency, amount) → bool, EconomyManager.get_balance(currency) → int"
+    write_access: EconomyManager-only
+    referenced_by:
+      - docs/architecture/adr-0001-autoload-boot-sequence.md
+    added: 2026-05-16
+    revised: ""
+
+  - state: offline_delta
+    status: active
+    owner_system: TimeManager
+    adr: docs/architecture/adr-0001-autoload-boot-sequence.md
+    interface: "TimeManager.get_offline_delta() → float (seconds); TimeManager.mark_session_start() called by SaveSystem on boot"
+    write_access: TimeManager-only
+    referenced_by:
+      - docs/architecture/adr-0001-autoload-boot-sequence.md
+    added: 2026-05-16
+    revised: ""
+
+  - state: rabbit_entities
+    status: active
+    owner_system: RabbitSystem
+    adr: docs/architecture/adr-0005-rabbitdata-resource.md
+    interface: "RabbitSystem.get_rabbit(id) → RabbitData; get_all_rabbits() → Array[RabbitData]; get_rabbits_in_hutch(hutch_id) → Array[RabbitData]; add_rabbit(data) → String; remove_rabbit(id); feed_rabbit(id, food) → bool"
+    write_access: RabbitSystem-only (all RabbitData field mutations go through RabbitSystem methods)
+    referenced_by:
+      - docs/architecture/adr-0005-rabbitdata-resource.md
+    added: 2026-05-16
+    revised: ""
 
 # Example:
 #
@@ -71,7 +114,73 @@ state_ownership: []
 #
 # pattern options: signal | direct_call | event_bus | shared_resource | rpc | none
 
-interfaces: []
+interfaces:
+  - contract: boot_sequence
+    status: active
+    pattern: direct_call
+    producer: Godot Project Settings (autoload order)
+    consumers:
+      - all autoloads
+      - all scenes
+    adr: docs/architecture/adr-0001-autoload-boot-sequence.md
+    signal_signature: "N/A — enforced by registration order: EventBus(1) → TimeManager(2) → EconomyManager(3) → GameState(4) → SaveSystem(5) → SceneManager(6)"
+    referenced_by:
+      - docs/architecture/adr-0001-autoload-boot-sequence.md
+    added: 2026-05-16
+    revised: ""
+
+  - contract: dirty_flag_save
+    status: active
+    pattern: direct_call
+    producer: any system mutating GameState
+    consumers:
+      - SaveSystem (polls is_dirty every 30s and on app background)
+    adr: docs/architecture/adr-0001-autoload-boot-sequence.md
+    signal_signature: "GameState.mark_dirty() → void; SaveSystem.save_game() triggered on next poll"
+    referenced_by:
+      - docs/architecture/adr-0001-autoload-boot-sequence.md
+    added: 2026-05-16
+    revised: ""
+
+  - contract: cross_system_communication
+    status: active
+    pattern: event_bus
+    producer: any system in any layer
+    consumers:
+      - any system in an equal or higher layer
+    adr: docs/architecture/adr-0003-eventbus-signals.md
+    signal_signature: "EventBus.<signal_name>.emit(args) — see full catalogue in ADR-0003"
+    referenced_by:
+      - docs/architecture/adr-0003-eventbus-signals.md
+    added: 2026-05-16
+    revised: ""
+
+  - contract: idle_production
+    status: active
+    pattern: direct_call
+    producer: IdleProductionSystem
+    consumers:
+      - TimeManager tick handler (calls get_tick_earnings() every second)
+      - SaveSystem boot sequence (calls calculate_offline_earnings() on resume)
+    adr: docs/architecture/adr-0007-idle-production-offline.md
+    signal_signature: "IdleProductionSystem.get_tick_earnings() → EarningsReport; IdleProductionSystem.calculate_offline_earnings(delta_seconds: float, was_backgrounded: bool) → EarningsReport. Callers pass result to EconomyManager.add() — IdleProductionSystem never calls EconomyManager directly."
+    referenced_by:
+      - docs/architecture/adr-0007-idle-production-offline.md
+    added: 2026-05-16
+    revised: ""
+
+  - contract: firebase_sync
+    status: active
+    pattern: direct_call
+    producer: SaveSystem
+    consumers:
+      - FirebaseAdapter (injected; wraps SDK or REST calls)
+    adr: docs/architecture/adr-0008-firebase-local-first-save.md
+    signal_signature: "FirebaseAdapter.push_save_async(data: Dictionary) → void (fire-and-forget, never awaited on main thread); FirebaseAdapter.fetch_save() → Dictionary (awaited only at boot, before first scene)."
+    referenced_by:
+      - docs/architecture/adr-0008-firebase-local-first-save.md
+    added: 2026-05-16
+    revised: ""
 
 # Example:
 #
@@ -131,7 +240,61 @@ performance_budgets: []
 # Register an API decision when the choice is non-obvious and other ADRs might
 # make a different choice for the same purpose without knowing this was decided.
 
-api_decisions: []
+api_decisions:
+  - purpose: scripting_language
+    status: active
+    api: GDScript (.gd files)
+    not: "C# (.cs files), mixed GDScript/C# codebase"
+    adr: docs/architecture/adr-0002-gdscript-language-choice.md
+    reason: "No compilation step (faster iteration), smaller mobile exports (no .NET runtime), sufficient performance for idle game scope"
+    referenced_by:
+      - docs/architecture/adr-0002-gdscript-language-choice.md
+    added: 2026-05-16
+    revised: ""
+
+  - purpose: abstract_base_resources
+    status: active
+    api: "@abstract decorator (GDScript 4.5+)"
+    not: "Convention-only base classes without enforcement"
+    adr: docs/architecture/adr-0002-gdscript-language-choice.md
+    reason: "Enforces subclass contracts for BaseHabitatBonus, BaseFoodEffect, BaseExpeditionZone without needing C# interfaces"
+    referenced_by:
+      - docs/architecture/adr-0002-gdscript-language-choice.md
+    added: 2026-05-16
+    revised: ""
+
+  - purpose: balance_data_loading
+    status: active
+    api: "FileAccess.get_file_as_string('res://assets/data/balance.json') + JSON.parse_string()"
+    not: "preload(), .tres resource files, hardcoded GDScript constants"
+    adr: docs/architecture/adr-0004-balance-json.md
+    reason: "JSON is human-readable, diff-friendly, and editable without touching code. Enables designer-friendly balance iteration."
+    referenced_by:
+      - docs/architecture/adr-0004-balance-json.md
+    added: 2026-05-16
+    revised: ""
+
+  - purpose: allele_representation
+    status: active
+    api: "String keys defined as constants in AlleleCatalogue (src/core/genetics/allele_catalogue.gd)"
+    not: "Integer enum indices, inline string literals in game logic"
+    adr: docs/architecture/adr-0006-genetics-allele-model.md
+    reason: "String keys are human-readable in savegame.json and logs, safe to reorder, and debuggable without a lookup table. Integer indices corrupt saves if the catalogue is renumbered."
+    referenced_by:
+      - docs/architecture/adr-0006-genetics-allele-model.md
+    added: 2026-05-16
+    revised: ""
+
+  - purpose: save_file_format
+    status: active
+    api: "JSON serialised to user://savegame.json via FileAccess.store_string()"
+    not: "ResourceSaver.save(), ConfigFile, binary formats"
+    adr: docs/architecture/adr-0008-firebase-local-first-save.md
+    reason: "JSON matches Firebase Realtime DB native format — no translation needed. Human-readable and git-diffable. Consistent with balance.json approach."
+    referenced_by:
+      - docs/architecture/adr-0008-firebase-local-first-save.md
+    added: 2026-05-16
+    revised: ""
 
 # Example:
 #
@@ -157,7 +320,76 @@ api_decisions: []
 # Register a pattern when an ADR explicitly bans it AND other ADRs might
 # unknowingly use it (i.e., it's a tempting but wrong approach for this project).
 
-forbidden_patterns: []
+forbidden_patterns:
+  - pattern: calling_later_autoload_in_ready
+    status: active
+    description: "An autoload's _ready() must not call any autoload registered after it in the boot sequence. EventBus(1) may call nothing. TimeManager(2) may call EventBus only. Etc."
+    why: "Violates the guaranteed boot order. If autoload N calls autoload N+2, N+2 may not have run _ready() yet, causing null-reference crashes that are intermittent and hard to reproduce."
+    adr: docs/architecture/adr-0001-autoload-boot-sequence.md
+    added: 2026-05-16
+
+  - pattern: bypassing_mark_dirty
+    status: active
+    description: "Code must never write GameState.is_dirty = true directly. Always call GameState.mark_dirty() instead."
+    why: "mark_dirty() is the hook point for any future save-throttling or change-tracking logic. Direct property writes bypass it silently."
+    adr: docs/architecture/adr-0001-autoload-boot-sequence.md
+    added: 2026-05-16
+
+  - pattern: csharp_files_in_src
+    status: active
+    description: "No .cs files may exist in src/. GDScript is the sole implementation language."
+    why: "Mixed GDScript/C# codebases require Variant marshalling at the boundary, add .NET runtime to exports (+20-30MB), and double the tooling surface area."
+    adr: docs/architecture/adr-0002-gdscript-language-choice.md
+    added: 2026-05-16
+
+  - pattern: untyped_variables_in_src
+    status: active
+    description: "All variables, parameters, and return types in src/ must have explicit type annotations. Untyped code (var x, func foo()) is only permitted in prototypes/."
+    why: "Untyped GDScript cannot be optimised by the compiler and produces runtime errors instead of editor warnings. Static typing is required for GdUnit4 test reliability."
+    adr: docs/architecture/adr-0002-gdscript-language-choice.md
+    added: 2026-05-16
+
+  - pattern: variadic_args_in_game_logic
+    status: active
+    description: "Variadic args (Variant...) must not be used in game logic interfaces — only in debug/logging utilities."
+    why: "Variadic parameters bypass static type checking. Game logic interfaces must be fully typed so the compiler catches misuse at authoring time."
+    adr: docs/architecture/adr-0002-gdscript-language-choice.md
+    added: 2026-05-16
+
+  - pattern: string_based_signal_connect
+    status: active
+    description: "Never use connect('signal_name', obj, 'method'). Always use typed callable: EventBus.signal_name.connect(callable)."
+    why: "String-based connect() was deprecated in Godot 4.0. It bypasses type checking and fails silently on typos."
+    adr: docs/architecture/adr-0003-eventbus-signals.md
+    added: 2026-05-16
+
+  - pattern: upward_direct_method_calls
+    status: active
+    description: "A system must never call a method on a system in a higher architecture layer. Presentation may not call Feature methods that mutate state. Feature may not call Presentation at all."
+    why: "Upward calls create circular dependencies and make lower-layer unit tests dependent on upper-layer classes being instantiated. EventBus signals are the only valid upward communication channel."
+    adr: docs/architecture/adr-0003-eventbus-signals.md
+    added: 2026-05-16
+
+  - pattern: hardcoded_balance_values
+    status: active
+    description: "No .gd file in src/ may contain a magic number representing a game balance value. The only permitted numeric literals in src/ are: array/loop indices, boolean-like flags (0/1), and engine constants (e.g., Color.WHITE). All balance values must be loaded from assets/data/balance.json."
+    why: "Hardcoded balance values require a code edit, test run, and rebuild for every tuning change. Externalising to JSON enables balance iteration without touching code."
+    adr: docs/architecture/adr-0004-balance-json.md
+    added: 2026-05-16
+
+  - pattern: direct_rabbitdata_mutation
+    status: active
+    description: "No .gd file outside src/core/rabbit_system.gd may assign to a RabbitData field directly (e.g., rabbit.hunger = 50, rabbit.stage = ...). All mutations must go through RabbitSystem methods."
+    why: "RabbitData immutability from outside RabbitSystem keeps the lifecycle state machine reliable and ensures SaveSystem serialises consistent state. Direct writes bypass the state machine and mark_dirty() hook."
+    adr: docs/architecture/adr-0005-rabbitdata-resource.md
+    added: 2026-05-16
+
+  - pattern: inline_allele_strings
+    status: active
+    description: "Allele key strings must always come from AlleleCatalogue constants (e.g., AlleleCatalogue.COLORS[0]), never as inline literals (e.g., 'gold', 'fast_eater') in game logic."
+    why: "Inline string literals create invisible coupling to the catalogue. A rename in AlleleCatalogue breaks inline strings silently with no compile error. Constants are refactor-safe."
+    adr: docs/architecture/adr-0006-genetics-allele-model.md
+    added: 2026-05-16
 
 # Example:
 #

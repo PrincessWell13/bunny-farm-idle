@@ -1,0 +1,43 @@
+{
+  "idle_production": {
+    "base_cc_per_rabbit_per_second": 0.05,
+    "offline_multiplier_background": 0.75,
+    "offline_multiplier_under_4h": 0.60,
+    "offline_multiplier_4_to_12h": 0.50,
+    "offline_multiplier_over_12h": 0.40,
+    "max_offline_hours": 72.0
+  },
+  "prestige": {
+    "bonuses_per_level": {
+      "1": { "growth_rate_bonus": 0.05, "offline_production_bonus": 0.05 },
+      "2": { "growth_rate_bonus": 0.10, "offline_production_bonus": 0.10 },
+      "3": { "growth_rate_bonus": 0.15, "offline_production_bonus": 0.15 },
+      "4": { "growth_rate_bonus": 0.20, "offline_production_bonus": 0.20 },
+      "5": { "growth_rate_bonus": 0.25, "offline_production_bonus": 0.25 }
+    }
+  },
+  "genetics": {
+    "rarity_weights": {
+      "common": 0.60,
+      "uncommon": 0.25,
+      "rare": 0.10,
+      "epic": 0.04,
+      "legendary": 0.01
+    },
+    "trait_synergies": [
+      { "traits": ["fast_eater", "efficient_eater"], "bonus": { "growth_rate_bonus": 0.3 } },
+      { "traits": ["speed_grower", "high_fertility"], "bonus": { "fertility_bonus": 0.25 } },
+      { "traits": ["lucky", "golden_touch"], "bonus": { "coin_bonus": 0.4 } }
+    ],
+    "trait_cancellations": [
+      { "traits": ["calm", "active"], "suppressed": "active" },
+      { "traits": ["night_owl", "early_bird"], "suppressed": "early_bird" }
+    ],
+    "ultra_combos": [
+      {
+        "traits": ["gene_beacon", "mutation_master", "golden_touch"],
+        "ultra_trait_id": "omega_gene"
+      }
+    ]
+  }
+}
