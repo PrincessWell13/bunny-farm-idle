@@ -36,7 +36,7 @@ func before_test() -> void:
 		_owned_eb = true
 	var active_eb: Object = Engine.get_singleton("EventBus")
 	if active_eb != null:
-		active_eb.rabbit_matured.connect(_on_matured)
+		active_eb.connect("rabbit_matured", _on_matured)
 	_system = RabbitSystem.new()
 	_system._baby_to_juvenile_threshold = 100.0
 	_system._juvenile_to_adult_threshold = 100.0
@@ -47,8 +47,8 @@ func before_test() -> void:
 
 func after_test() -> void:
 	var active_eb: Object = Engine.get_singleton("EventBus")
-	if active_eb != null and active_eb.rabbit_matured.is_connected(_on_matured):
-		active_eb.rabbit_matured.disconnect(_on_matured)
+	if active_eb != null and active_eb.is_connected("rabbit_matured", _on_matured):
+		active_eb.disconnect("rabbit_matured", _on_matured)
 	_system.free()
 	_system = null
 	if _owned_gs:

@@ -38,7 +38,7 @@ func before_test() -> void:
 		_owned_eb = true
 	var active_eb: Object = Engine.get_singleton("EventBus")
 	if active_eb != null:
-		active_eb.rabbit_died.connect(_on_died)
+		active_eb.connect("rabbit_died", _on_died)
 	_system = RabbitSystem.new()
 	_died_calls.clear()
 	_get_rabbit_in_handler_result = "not_called"
@@ -46,8 +46,8 @@ func before_test() -> void:
 
 func after_test() -> void:
 	var active_eb: Object = Engine.get_singleton("EventBus")
-	if active_eb != null and active_eb.rabbit_died.is_connected(_on_died):
-		active_eb.rabbit_died.disconnect(_on_died)
+	if active_eb != null and active_eb.is_connected("rabbit_died", _on_died):
+		active_eb.disconnect("rabbit_died", _on_died)
 	_system.free()
 	_system = null
 	if _owned_gs:
