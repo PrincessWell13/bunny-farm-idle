@@ -13,17 +13,25 @@ class MockGameState:
 
 var _system: RabbitSystem
 var _mock_gs: MockGameState
+var _owned_gs: bool = false
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
-	Engine.register_singleton("GameState", _mock_gs)
+	_owned_gs = false
+	if not Engine.has_singleton("GameState"):
+		Engine.register_singleton("GameState", _mock_gs)
+		_owned_gs = true
 	_system = RabbitSystem.new()
 
 
 func after_test() -> void:
 	_system.free()
-	Engine.unregister_singleton("GameState")
+	_system = null
+	if _owned_gs:
+		Engine.unregister_singleton("GameState")
+	elif Engine.has_singleton("GameState"):
+		(Engine.get_singleton("GameState") as GameState).rabbits.clear()
 
 
 ## AC-1: add_rabbit returns a non-empty string id.

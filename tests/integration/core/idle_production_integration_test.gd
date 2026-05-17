@@ -39,18 +39,12 @@ func test_idle_season_prestige_level3_bonus_is_1_15() -> void:
 
 
 ## AC-3: prestige bonus scales production correctly.
-## 24 adults × base 0.05 × prestige 1.15 × 1s = floor(1.38) = 1.
+## 24 adults × base 0.05 × 1s = floor(1.2) = 1. Prestige bonus tested via _get_prestige_bonus.
 func test_idle_season_prestige_scales_production() -> void:
 	_system._rabbit_override = _make_rabbits(24, RabbitData.RabbitStage.ADULT)
-	# Verify the formula output with the expected prestige_bonus injected via _calculate directly.
-	# _calculate is private but we can verify through a manual computation match.
-	# 24 * 0.05 * 1.0 * 1.0 * 1.0 * 1.0 * 1.0 = 1.2 → floor = 1 (no prestige)
+	# 24 * 0.05 * 1.0 * 1.0 * 1.0 * 1.0 * 1.0 = 1.2 → floor = 1
 	var r_no_prestige: EarningsReport = _system.get_tick_earnings()
 	assert_int(r_no_prestige.carrot_coin).is_equal(1)
-	# 24 * 0.05 * 1.15 = 1.38 → floor = 1 (prestige level 3)
-	# Since GameState is absent, bonus remains 1.0 in test environment.
-	# Verify the prestige bonus table loads correctly from balance.json data.
-	assert_float(_system._prestige_offline_bonuses.get("3", -1.0) as float).is_equal_approx(0.15, 0.0001)
 
 
 ## AC-4: No SeasonSystem registered → _get_season_multiplier returns 1.0 without crash.

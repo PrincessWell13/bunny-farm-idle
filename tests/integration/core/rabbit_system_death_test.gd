@@ -21,23 +21,41 @@ var _mock_gs: MockGameState
 var _mock_eb: MockEventBus
 var _died_calls: Array[String] = []
 var _get_rabbit_in_handler_result: Variant = "not_called"
+var _owned_gs: bool = false
+var _owned_eb: bool = false
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
 	_mock_eb = MockEventBus.new()
-	Engine.register_singleton("GameState", _mock_gs)
-	Engine.register_singleton("EventBus", _mock_eb)
-	_mock_eb.rabbit_died.connect(_on_died)
+	_owned_gs = false
+	_owned_eb = false
+	if not Engine.has_singleton("GameState"):
+		Engine.register_singleton("GameState", _mock_gs)
+		_owned_gs = true
+	if not Engine.has_singleton("EventBus"):
+		Engine.register_singleton("EventBus", _mock_eb)
+		_owned_eb = true
+	var active_eb: Object = Engine.get_singleton("EventBus")
+	if active_eb != null:
+		active_eb.rabbit_died.connect(_on_died)
 	_system = RabbitSystem.new()
 	_died_calls.clear()
 	_get_rabbit_in_handler_result = "not_called"
 
 
 func after_test() -> void:
+	var active_eb: Object = Engine.get_singleton("EventBus")
+	if active_eb != null and active_eb.rabbit_died.is_connected(_on_died):
+		active_eb.rabbit_died.disconnect(_on_died)
 	_system.free()
-	Engine.unregister_singleton("GameState")
-	Engine.unregister_singleton("EventBus")
+	_system = null
+	if _owned_gs:
+		Engine.unregister_singleton("GameState")
+	elif Engine.has_singleton("GameState"):
+		(Engine.get_singleton("GameState") as GameState).rabbits.clear()
+	if _owned_eb:
+		Engine.unregister_singleton("EventBus")
 
 
 func _on_died(rabbit_id: String) -> void:

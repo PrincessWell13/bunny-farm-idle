@@ -13,11 +13,15 @@ class MockGameState:
 
 var _system: RabbitSystem
 var _mock_gs: MockGameState
+var _owned_gs: bool = false
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
-	Engine.register_singleton("GameState", _mock_gs)
+	_owned_gs = false
+	if not Engine.has_singleton("GameState"):
+		Engine.register_singleton("GameState", _mock_gs)
+		_owned_gs = true
 	_system = RabbitSystem.new()
 	_system._grass_hunger_restore = 30.0
 	_system._carrot_hunger_restore = 40.0
@@ -28,7 +32,11 @@ func before_test() -> void:
 
 func after_test() -> void:
 	_system.free()
-	Engine.unregister_singleton("GameState")
+	_system = null
+	if _owned_gs:
+		Engine.unregister_singleton("GameState")
+	elif Engine.has_singleton("GameState"):
+		(Engine.get_singleton("GameState") as GameState).rabbits.clear()
 
 
 func _make_rabbit(hunger: float = 50.0, growth: float = 0.0, happiness: float = 60.0) -> String:

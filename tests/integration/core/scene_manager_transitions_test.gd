@@ -4,12 +4,22 @@
 extends GdUnitTestSuite
 
 const SceneManagerScript := preload("res://src/core/scene_manager.gd")
+const EventBusScript := preload("res://src/core/event_bus.gd")
 const MINIMAL_SCENE_PATH := "res://tests/helpers/minimal_scene.tscn"
 
 var _scene_manager: Node
+var _owned_event_bus: bool = false
+var _local_event_bus: Node = null
 
 
 func before_test() -> void:
+	_owned_event_bus = false
+	_local_event_bus = null
+	if not Engine.has_singleton("EventBus"):
+		_local_event_bus = EventBusScript.new()
+		Engine.register_singleton("EventBus", _local_event_bus)
+		add_child(_local_event_bus)
+		_owned_event_bus = true
 	_scene_manager = SceneManagerScript.new()
 	add_child(_scene_manager)
 
@@ -21,6 +31,11 @@ func after_test() -> void:
 	if is_instance_valid(_scene_manager):
 		_scene_manager.queue_free()
 	_scene_manager = null
+	if _owned_event_bus:
+		Engine.unregister_singleton("EventBus")
+		if is_instance_valid(_local_event_bus):
+			_local_event_bus.queue_free()
+		_local_event_bus = null
 
 
 ## AC-3: get_current_scene() returns null before any goto_scene call.
