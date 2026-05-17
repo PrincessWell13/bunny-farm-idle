@@ -10,27 +10,19 @@ jobs:
   test:
     name: Run GdUnit4 Test Suite
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Run GdUnit4 tests
-        uses: MikeSchulze/gdUnit4-action@v1
+        uses: MikeSchulze/gdUnit4-action@v1.3.1
         with:
-          godot-version: '4.6.0'
+          godot-version: '4.3'
           godot-status: 'stable'
-          paths: |
-            res://tests/unit
-            res://tests/integration
-          report-name: 'test-results'
-          timeout: 600
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: reports/
-          retention-days: 14
+          version: 'latest'
+          paths: 'res://tests/unit,res://tests/integration'
+          timeout: 15
+          publish-report: true
+          upload-report: true
