@@ -24,6 +24,7 @@ const CONTENT_H: float = SCREEN_H - HEADER_H - TABBAR_H
 # State
 # ---------------------------------------------------------------------------
 var _pending_coins: int = 0
+var _pending_frac: float = 0.0   # fractional coin accumulator; floor crosses yield +1 coin
 var _rabbit_ids: Array[String] = []
 
 # Breeding selection
@@ -466,7 +467,12 @@ func _on_currency_changed(currency: int, new_balance: int, _delta: int) -> void:
 
 func _on_production_tick() -> void:
 	var report: EarningsReport = IdleProductionSystem.get_tick_earnings()
-	_pending_coins += report.carrot_coin
+	# Accumulate the raw float so sub-1-coin-per-second rates still produce coins over time.
+	_pending_frac += report.carrot_coin_raw
+	var whole: int = int(_pending_frac)
+	if whole > 0:
+		_pending_coins += whole
+		_pending_frac -= float(whole)
 	if _pending_coins > 0:
 		_collect_btn.text = "TAP TO COLLECT  +%d coins" % _pending_coins
 		_collect_btn.disabled = false

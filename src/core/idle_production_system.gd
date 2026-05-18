@@ -52,6 +52,7 @@ func _calculate(delta_seconds: float, offline_multiplier: float) -> EarningsRepo
 
 	var report := EarningsReport.new()
 	report.carrot_coin = int(floor(raw))
+	report.carrot_coin_raw = raw
 	report.star_dust = 0
 	report.applied_multiplier = offline_multiplier
 	report.delta_seconds = delta_seconds
