@@ -33,6 +33,9 @@ func goto_scene(path: String) -> void:
 	if is_instance_valid(_active_scene):
 		_active_scene.queue_free()
 	var packed: PackedScene = load(path) as PackedScene
+	if packed == null:
+		push_warning("SceneManager: scene not found at %s — skipping" % path)
+		return
 	_active_scene = packed.instantiate()
 	get_tree().root.add_child(_active_scene)
 
@@ -43,6 +46,9 @@ func get_current_scene() -> Node:
 ## Loads the scene at path and pushes it as an overlay above the current active scene.
 func push_overlay(path: String) -> void:
 	var packed: PackedScene = load(path) as PackedScene
+	if packed == null:
+		push_warning("SceneManager: overlay scene not found at %s — skipping" % path)
+		return
 	var overlay: Node = packed.instantiate()
 	get_tree().root.add_child(overlay)
 	_overlay_stack.append(overlay)

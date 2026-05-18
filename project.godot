@@ -15,7 +15,7 @@ config/version="0.1.0"
 config/description="An idle game about breeding rabbits."
 config/tags=PackedStringArray("mobile", "idle", "casual")
 config/features=PackedStringArray("4.6", "Mobile")
-run/main_scene=""
+run/main_scene="res://prototypes/core-loop-prototype/main.tscn"
 config/icon="res://icon.svg"
 
 [autoload]
@@ -24,6 +24,9 @@ EventBus="*res://src/core/event_bus.gd"
 TimeManager="*res://src/core/time_manager.gd"
 EconomyManager="*res://src/core/economy_manager.gd"
 GameState="*res://src/core/game_state.gd"
+RabbitSystem="*res://src/core/rabbit_system.gd"
+GeneticsSystem="*res://src/core/genetics_system.gd"
+IdleProductionSystem="*res://src/core/idle_production_system.gd"
 SaveSystem="*res://src/core/save_system.gd"
 SceneManager="*res://src/core/scene_manager.gd"
 

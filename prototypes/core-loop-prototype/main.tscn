@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://proto001"]
+
+[ext_resource type="Script" path="res://prototypes/core-loop-prototype/core_loop_prototype.gd" id="1_proto"]
+
+[node name="CoreLoopPrototype" type="Node2D"]
+script = ExtResource("1_proto")
