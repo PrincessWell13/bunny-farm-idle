@@ -13,7 +13,7 @@ signal rabbit_stat_changed(rabbit_id: String)
 signal rabbit_died(rabbit_id: String)
 
 ## Economy
-signal currency_changed(currency: EconomyManager.CurrencyType, new_balance: int, delta: int)
+signal currency_changed(currency: int, new_balance: int, delta: int)
 
 ## Production
 signal production_ticked(carrot_coin: int, star_dust: int)

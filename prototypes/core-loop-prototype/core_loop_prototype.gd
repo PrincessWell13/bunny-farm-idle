@@ -430,12 +430,10 @@ func _refresh_hutch_buttons() -> void:
 	_clear_children(_hutch2_container)
 
 	var all_rabbits: Array[RabbitData] = RabbitSystem.get_all_rabbits()
-	# Limit display: hutch 1 = first 2, hutch 2 = third
+	# Hutch 1: first 2 rabbits. Hutch 2: the rest (no hard cap — bred rabbits overflow here).
 	var slot: int = 0
 	for rabbit: RabbitData in all_rabbits:
 		var container: VBoxContainer = _hutch1_container if slot < 2 else _hutch2_container
-		if slot >= 3:
-			break
 		var btn := _make_rabbit_button(rabbit)
 		container.add_child(btn)
 		slot += 1
