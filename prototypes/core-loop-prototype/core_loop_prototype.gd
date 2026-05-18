@@ -461,7 +461,7 @@ func _make_rabbit_button(rabbit: RabbitData) -> Button:
 # ---------------------------------------------------------------------------
 # Signal callbacks
 # ---------------------------------------------------------------------------
-func _on_currency_changed(currency: EconomyManager.CurrencyType, new_balance: int, _delta: int) -> void:
+func _on_currency_changed(currency: int, new_balance: int, _delta: int) -> void:
 	if currency == EconomyManager.CurrencyType.CARROT_COIN:
 		_coin_label.text = "Coins: %d" % new_balance
 
@@ -620,11 +620,15 @@ func _on_breed_pressed() -> void:
 		return
 
 	var child: RabbitData = GeneticsSystem.breed(parent_a, parent_b)
+	var child_id: String = RabbitSystem.add_rabbit(child)
+	_rabbit_ids.append(child_id)
+	_refresh_hutch_buttons()
+
 	var child_color: String = child.genome.color.expressed() if child.genome != null else "unknown"
 	var child_ears: String = child.genome.ears.expressed() if child.genome != null else "unknown"
 	var rarity: String = _rarity_label(child_color)
 
-	_result_label.text = "Offspring: %s %s rabbit\nRarity: %s" % [child_color, child_ears, rarity]
+	_result_label.text = "Offspring: %s %s rabbit\nRarity: %s\nAdded to hutch!" % [child_color, child_ears, rarity]
 	_result_panel.visible = true
 
 	# Reset selections for next breed
