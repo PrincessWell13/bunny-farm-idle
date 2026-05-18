@@ -2,7 +2,7 @@
 ## Autoload #2. Starts a 1-second tick timer in _ready().
 ## SaveSystem calls mark_session_start() after loading the save file.
 ## See ADR-0001 for boot sequence and ownership rules.
-class_name TimeManager extends Node
+extends Node
 
 ## Emitted every 1 second by the internal Timer. delta is always 1.0 in
 ## normal play; float type preserved for future slow-device adaptation.

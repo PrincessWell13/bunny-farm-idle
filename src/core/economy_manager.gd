@@ -3,7 +3,7 @@
 ## them from the save file after boot. All income and expenditure pass through
 ## add() and spend() — never by direct field access from other systems.
 ## See ADR-0001 for ownership rules and boot sequence.
-class_name EconomyManager extends Node
+extends Node
 
 enum CurrencyType { CARROT_COIN, STAR_DUST, CRYSTAL_GEM, GENE_FRAGMENT }
 

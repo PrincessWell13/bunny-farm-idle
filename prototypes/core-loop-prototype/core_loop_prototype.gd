@@ -104,7 +104,7 @@ func _seed_starter_rabbits() -> void:
 
 
 ## Builds a homozygous genome with one expressed trait.
-func _make_genome(color: String, ears: String, trait: String) -> Genome:
+func _make_genome(color: String, ears: String, p_trait: String) -> Genome:
 	var genome := Genome.new()
 	genome.color.allele_a = color
 	genome.color.allele_b = color
@@ -112,7 +112,7 @@ func _make_genome(color: String, ears: String, trait: String) -> Genome:
 	genome.size.allele_b = "medium"
 	genome.ears.allele_a = ears
 	genome.ears.allele_b = ears
-	genome.trait_a.allele_a = trait
+	genome.trait_a.allele_a = p_trait
 	genome.trait_a.allele_b = "none"
 	genome.trait_b.allele_a = "none"
 	genome.trait_b.allele_b = "none"

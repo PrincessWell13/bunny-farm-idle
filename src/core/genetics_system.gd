@@ -1,7 +1,7 @@
 ## GeneticsSystem — owns the breeding algorithm and trait stacking resolution (ADR-0006).
 ## breed() and get_breed_preview() never modify parent rabbits (ADR-0005 immutability rule).
 ## All probability weights and mutation config loaded from balance.json (ADR-0004).
-class_name GeneticsSystem extends Node
+extends Node
 
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _rarity_weights: Dictionary = {

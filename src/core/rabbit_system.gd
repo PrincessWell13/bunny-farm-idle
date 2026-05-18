@@ -1,7 +1,7 @@
 ## RabbitSystem — owns the rabbit population and enforces the immutability contract.
 ## Only methods in this file may write to RabbitData fields (ADR-0005).
 ## Backing store is GameState.rabbits (ADR-0001); internal dict provides O(1) lookup.
-class_name RabbitSystem extends Node
+extends Node
 
 ## Lightweight food descriptor. Construct with FoodItem.new("grass") etc.
 class FoodItem:

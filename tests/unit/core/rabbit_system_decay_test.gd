@@ -35,7 +35,7 @@ func after_test() -> void:
 	if _owned_gs:
 		Engine.unregister_singleton("GameState")
 	elif Engine.has_singleton("GameState"):
-		(Engine.get_singleton("GameState") as GameState).rabbits.clear()
+		Engine.get_singleton("GameState").rabbits.clear()
 
 
 ## AC-1: hunger decreases by decay_rate × delta each tick.

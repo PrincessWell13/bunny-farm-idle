@@ -2,7 +2,7 @@
 ## Autoload #4. Data tree is allocated empty here; SaveSystem.load_game() populates it.
 ## Every mutation must call mark_dirty() when done.
 ## See ADR-0001 for ownership rules and boot sequence.
-class_name GameState extends Node
+extends Node
 
 var rabbits: Array[RabbitData] = []
 ## forward-ref: update to Array[HutchData] when habitat-system epic is created
@@ -10,7 +10,7 @@ var hutches: Array = []
 var prestige_count: int = 0
 ## species_id (String) → discovered (bool)
 var collection_registry: Dictionary = {}
-var active_expeditions: Array[Dictionary] = []
+var active_expeditions: Array = []
 var settings: Dictionary = {}
 var last_save_timestamp: int = 0
 var is_dirty: bool = false

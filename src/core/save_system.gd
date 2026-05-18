@@ -1,7 +1,7 @@
 ## SaveSystem — autoload #5. Owns local file I/O and Firebase sync for all game state.
 ## Depends on FirebaseAdapter (injected by SceneManager post-boot — never call SceneManager in _ready()).
 ## ADR-0008: user://savegame.json is authoritative; Firebase is async sync target.
-class_name SaveSystem extends Node
+extends Node
 
 const SAVE_PATH: String = "user://savegame.json"
 const SAVE_VERSION: int = 1
@@ -13,11 +13,11 @@ var _firebase: FirebaseAdapter = null
 ## Overridable for test isolation — tests set this to a temp path before calling _load_local/_write_local.
 var _save_path: String = SAVE_PATH
 
-## Injectable for test isolation; production fallback uses Engine.get_singleton("GameState").
-var _game_state: GameState = null
+## Injectable for test isolation; production fallback resolves via /root/GameState autoload.
+var _game_state: Node = null
 
-## Injectable for test isolation; production fallback uses Engine.get_singleton("TimeManager").
-var _time_manager: TimeManager = null
+## Injectable for test isolation; production fallback resolves via /root/TimeManager autoload.
+var _time_manager: Node = null
 
 
 ## Called at boot (autoload #5). Loads game state then arms the auto-save timer.
@@ -101,14 +101,24 @@ func _write_local(data: Dictionary) -> void:
 	file.close()
 
 
-## Returns the injected GameState or falls back to the autoload singleton.
-func _gs() -> GameState:
-	return _game_state if _game_state != null else (Engine.get_singleton("GameState") as GameState)
+## Returns the injected GameState or falls back to the autoload node.
+## Engine.get_singleton path handles unit-test manual registration;
+## get_node path handles production autoloads (scene-tree nodes, not Engine singletons).
+func _gs() -> Node:
+	if _game_state != null:
+		return _game_state
+	if Engine.has_singleton("GameState"):
+		return Engine.get_singleton("GameState")
+	return get_node_or_null("/root/GameState")
 
 
-## Returns the injected TimeManager or falls back to the autoload singleton.
-func _tm() -> TimeManager:
-	return _time_manager if _time_manager != null else (Engine.get_singleton("TimeManager") as TimeManager)
+## Returns the injected TimeManager or falls back to the autoload node.
+func _tm() -> Node:
+	if _time_manager != null:
+		return _time_manager
+	if Engine.has_singleton("TimeManager"):
+		return Engine.get_singleton("TimeManager")
+	return get_node_or_null("/root/TimeManager")
 
 
 ## Serialises full GameState to the save schema defined in ADR-0008.

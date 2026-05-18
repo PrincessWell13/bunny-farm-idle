@@ -1,7 +1,7 @@
 ## IdleProductionSystem — pure calculation node for idle Carrot Coin production (ADR-0007).
 ## Returns EarningsReport — caller passes result to EconomyManager.add(). Never mutates state.
 ## All rates loaded from balance.json idle_production section (ADR-0004).
-class_name IdleProductionSystem extends Node
+extends Node
 
 ## Loaded from balance.json; fallback defaults used when file is absent or key missing.
 var _base_rate: float = 0.05
@@ -72,10 +72,12 @@ func _count_productive_rabbits() -> int:
 	var source: Array[RabbitData]
 	if _rabbit_override.size() > 0:
 		source = _rabbit_override
-	elif Engine.has_singleton("RabbitSystem"):
-		source = (Engine.get_singleton("RabbitSystem") as Node).get_all_rabbits()
 	else:
-		return 0
+		var rs: Node = Engine.get_singleton("RabbitSystem") if Engine.has_singleton("RabbitSystem") \
+				else get_node_or_null("/root/RabbitSystem")
+		if rs == null:
+			return 0
+		source = rs.get_all_rabbits()
 
 	var count: int = 0
 	for rabbit: RabbitData in source:
@@ -91,18 +93,22 @@ func _get_hutch_bonus() -> float:
 
 ## Returns 1.0 + harvest_bonus from SeasonSystem autoload when present; 1.0 when absent.
 func _get_season_multiplier() -> float:
-	if not Engine.has_singleton("SeasonSystem"):
+	var ss: Node = Engine.get_singleton("SeasonSystem") if Engine.has_singleton("SeasonSystem") \
+			else get_node_or_null("/root/SeasonSystem")
+	if ss == null:
 		return 1.0
-	var harvest_bonus: float = (Engine.get_singleton("SeasonSystem") as Node).get_harvest_bonus()
+	var harvest_bonus: float = ss.get_harvest_bonus()
 	return 1.0 + harvest_bonus
 
 
 ## Returns 1.0 + offline_production_bonus for the player's prestige level (from GameState).
 ## Level 0 or no bonus entry → returns 1.0.
 func _get_prestige_bonus() -> float:
-	if not Engine.has_singleton("GameState"):
+	var gs: Node = Engine.get_singleton("GameState") if Engine.has_singleton("GameState") \
+			else get_node_or_null("/root/GameState")
+	if gs == null:
 		return 1.0
-	var prestige_count: int = (Engine.get_singleton("GameState") as Node).prestige_count
+	var prestige_count: int = gs.prestige_count
 	if prestige_count <= 0:
 		return 1.0
 	var bonus: float = _prestige_offline_bonuses.get(str(prestige_count), 0.0) as float

@@ -2,7 +2,7 @@
 ## Autoload #6 (last). All prior autoloads are guaranteed ready before _ready() runs.
 ## goto_scene() is called via call_deferred in _ready() to avoid SceneTree frame-order
 ## issues at boot. See ADR-0001 for boot sequence and ownership rules.
-class_name SceneManager extends Node
+extends Node
 
 const _SCENE_PATHS: Dictionary = {
 	0: "res://src/ui/screens/main_farm.tscn",

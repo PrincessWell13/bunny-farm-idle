@@ -36,7 +36,7 @@ func after_test() -> void:
 	if _owned_gs:
 		Engine.unregister_singleton("GameState")
 	elif Engine.has_singleton("GameState"):
-		(Engine.get_singleton("GameState") as GameState).rabbits.clear()
+		Engine.get_singleton("GameState").rabbits.clear()
 
 
 func _make_rabbit(hunger: float = 50.0, growth: float = 0.0, happiness: float = 60.0) -> String:
