@@ -226,11 +226,21 @@ func _build_farm_view(parent: Control) -> void:
 	_hutch2_container.add_theme_constant_override("separation", 10)
 	hutch2.add_child(_hutch2_container)
 
-	# Collect button
-	_collect_btn = _make_button("COLLECT! +0 coins", COLOR_CARROT)
-	_place(_collect_btn, 200.0, 1010.0, SCREEN_W - 400.0, 100.0)
+	# Idle earnings hint — always visible so players understand the loop
+	var earn_hint := Label.new()
+	earn_hint.text = "Rabbits earn coins automatically every second."
+	earn_hint.add_theme_color_override("font_color", COLOR_WORN_OAK)
+	earn_hint.add_theme_font_size_override("font_size", 28)
+	earn_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	earn_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_place(earn_hint, 40.0, 985.0, SCREEN_W - 80.0, 60.0)
+	parent.add_child(earn_hint)
+
+	# Collect button — always visible; disabled (grey) when no coins are ready
+	_collect_btn = _make_button("Waiting for coins…", COLOR_WORN_OAK)
+	_place(_collect_btn, 100.0, 1055.0, SCREEN_W - 200.0, 110.0)
 	_collect_btn.add_theme_font_size_override("font_size", 36)
-	_collect_btn.visible = false
+	_collect_btn.disabled = true
 	_collect_btn.pressed.connect(_on_collect_pressed)
 	parent.add_child(_collect_btn)
 
@@ -460,14 +470,35 @@ func _on_production_tick() -> void:
 	var report: EarningsReport = IdleProductionSystem.get_tick_earnings()
 	_pending_coins += report.carrot_coin
 	if _pending_coins > 0:
-		_collect_btn.text = "COLLECT! +%d coins" % _pending_coins
-		_collect_btn.visible = true
+		_collect_btn.text = "TAP TO COLLECT  +%d coins" % _pending_coins
+		_collect_btn.disabled = false
+		# Swap button style to carrot orange so it draws the eye
+		var style := StyleBoxFlat.new()
+		style.bg_color = COLOR_CARROT
+		style.corner_radius_top_left = 8
+		style.corner_radius_top_right = 8
+		style.corner_radius_bottom_left = 8
+		style.corner_radius_bottom_right = 8
+		_collect_btn.add_theme_stylebox_override("normal", style)
+		_collect_btn.add_theme_stylebox_override("hover", style)
+		_collect_btn.add_theme_stylebox_override("pressed", style)
 
 
 func _on_collect_pressed() -> void:
 	EconomyManager.add(EconomyManager.CurrencyType.CARROT_COIN, _pending_coins)
 	_pending_coins = 0
-	_collect_btn.visible = false
+	_collect_btn.text = "Waiting for coins…"
+	_collect_btn.disabled = true
+	# Reset to grey style
+	var style := StyleBoxFlat.new()
+	style.bg_color = COLOR_WORN_OAK
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	_collect_btn.add_theme_stylebox_override("normal", style)
+	_collect_btn.add_theme_stylebox_override("hover", style)
+	_collect_btn.add_theme_stylebox_override("pressed", style)
 
 
 func _on_farm_tab_pressed() -> void:

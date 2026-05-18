@@ -39,6 +39,7 @@ dist/
 .godot/
 *.translation
 export_presets.cfg
+*.uid
 
 # === GdUnit4 / CI Test Artifacts ===
 reports/
