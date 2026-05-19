@@ -544,8 +544,8 @@ func _refresh_rabbit_card() -> void:
 func _on_feed_pressed() -> void:
 	if _card_rabbit_id.is_empty():
 		return
-	var food := RabbitSystem.FoodItem.new("grass")
-	RabbitSystem.feed_rabbit(_card_rabbit_id, food)
+	# FoodItem removed in sprint-04; production path is FoodSystem.feed_rabbit(rabbit_id, food_id)
+	pass
 	_refresh_rabbit_card()
 	_refresh_hutch_buttons()
 
