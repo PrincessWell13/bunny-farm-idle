@@ -3,12 +3,6 @@
 ## Backing store is GameState.rabbits (ADR-0001); internal dict provides O(1) lookup.
 extends Node
 
-## Lightweight food descriptor. Construct with FoodItem.new("grass") etc.
-class FoodItem:
-	var food_type: String = ""
-	func _init(type: String) -> void:
-		food_type = type
-
 var _rabbits: Dictionary = {}  # rabbit_id -> RabbitData
 
 ## Food effect magnitudes loaded from balance.json "food" section. GDScript-side fallbacks only.
@@ -139,6 +133,16 @@ func get_all_rabbits() -> Array[RabbitData]:
 	result.assign(_rabbits.values())
 	return result
 
+## Sets the hutch_id field on a rabbit. Only HabitatSystem should call this (ADR-0010).
+## No-op if rabbit_id is not found.
+func set_hutch_id(rabbit_id: String, hutch_id: String) -> void:
+	var rabbit: RabbitData = get_rabbit(rabbit_id)
+	if rabbit == null:
+		return
+	rabbit.hutch_id = hutch_id
+	GameState.mark_dirty()
+
+
 ## Returns only rabbits whose hutch_id matches the given id.
 func get_rabbits_in_hutch(hutch_id: String) -> Array[RabbitData]:
 	var result: Array[RabbitData] = []
@@ -157,13 +161,15 @@ func remove_rabbit(rabbit_id: String) -> void:
 	GameState.rabbits.erase(rabbit)
 	GameState.mark_dirty()
 
-## Applies the food item's stat effects to the rabbit. Returns false if rabbit not found.
+## Applies food stat effects to the rabbit identified by rabbit_id.
+## food_type must match a key in balance.json food.items (e.g. "grass", "carrot").
+## Returns false if rabbit_id is not found; true on success.
 ## All effect magnitudes come from balance.json "food" section (ADR-0004).
-func feed_rabbit(rabbit_id: String, food: FoodItem) -> bool:
+func feed_rabbit(rabbit_id: String, food_type: String) -> bool:
 	var rabbit: RabbitData = get_rabbit(rabbit_id)
 	if rabbit == null:
 		return false
-	match food.food_type:
+	match food_type:
 		"grass":
 			rabbit.hunger = minf(100.0, rabbit.hunger + _grass_hunger_restore)
 		"carrot":
@@ -173,9 +179,46 @@ func feed_rabbit(rabbit_id: String, food: FoodItem) -> bool:
 			rabbit.growth_progress = minf(100.0, rabbit.growth_progress + _star_carrot_growth_bonus)
 			rabbit.happiness = minf(100.0, rabbit.happiness + _star_carrot_happiness_bonus)
 		_:
-			push_warning("RabbitSystem: unknown food type '%s'" % food.food_type)
+			push_warning("RabbitSystem: unknown food type '%s'" % food_type)
 	GameState.mark_dirty()
 	return true
 
 func _generate_id() -> String:
 	return "rabbit_%d_%d" % [int(Time.get_unix_time_from_system()), randi()]
+
+
+## Marks the rabbit as on expedition by setting is_on_expedition = true.
+## Called by ExpeditionSystem.start_expedition() after appending the slot (ADR-0011).
+## No-op with push_warning if rabbit_id is unknown.
+func send_on_expedition(rabbit_id: String, slot_id: String) -> void:
+	var rabbit: RabbitData = get_rabbit(rabbit_id)
+	if rabbit == null:
+		push_warning("RabbitSystem.send_on_expedition: unknown rabbit '%s'" % rabbit_id)
+		return
+	rabbit.is_on_expedition = true
+	GameState.mark_dirty()
+	# slot_id is reserved for future UI display in story-002; parameter retained for API stability.
+
+
+## Clears the is_on_expedition flag when a rabbit returns from an expedition (ADR-0011).
+## Called by ExpeditionSystem.collect() after rewards are granted.
+## No-op with push_warning if rabbit_id is unknown.
+func return_from_expedition(rabbit_id: String) -> void:
+	var rabbit: RabbitData = get_rabbit(rabbit_id)
+	if rabbit == null:
+		push_warning("RabbitSystem.return_from_expedition: unknown rabbit '%s'" % rabbit_id)
+		return
+	rabbit.is_on_expedition = false
+	GameState.mark_dirty()
+
+
+## Returns true if any rabbit in the roster has rarity LEGENDARY.
+## TODO: implement when rarity system is complete.
+func has_legendary_rabbit() -> bool:
+	return false  # TODO: implement when rarity system is complete
+
+
+## Returns the IDs of all rabbits in the roster that have rarity LEGENDARY.
+## TODO: implement when rarity system is complete.
+func get_legendary_rabbit_ids() -> Array[String]:
+	return []  # TODO: implement when rarity system is complete

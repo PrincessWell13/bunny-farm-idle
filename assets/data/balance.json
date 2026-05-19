@@ -8,6 +8,7 @@
     "max_offline_hours": 72.0
   },
   "prestige": {
+    "max_level": 20,
     "bonuses_per_level": {
       "1": { "growth_rate_bonus": 0.05, "offline_production_bonus": 0.05 },
       "2": { "growth_rate_bonus": 0.10, "offline_production_bonus": 0.10 },
@@ -15,6 +16,105 @@
       "4": { "growth_rate_bonus": 0.20, "offline_production_bonus": 0.20 },
       "5": { "growth_rate_bonus": 0.25, "offline_production_bonus": 0.25 }
     }
+  },
+  "habitat": {
+    "cleanliness_decay_per_second": 0.001,
+    "cleanliness_thresholds": [
+      { "min": 0.75, "production_mult": 1.2, "fertility_mult": 1.1 },
+      { "min": 0.40, "production_mult": 1.0, "fertility_mult": 1.0 },
+      { "min": 0.0,  "production_mult": 0.8, "fertility_mult": 0.9 }
+    ],
+    "capacity_by_level": [4, 8, 12, 16, 20, 24]
+  },
+  "food": {
+    "max_stack": 99,
+    "items": {
+      "grass":       { "seed_cost": 5,  "grow_time_seconds": 60.0,  "harvest_quantity": 3, "max_stack": 99 },
+      "carrot":      { "seed_cost": 15, "grow_time_seconds": 300.0, "harvest_quantity": 2, "max_stack": 99 },
+      "star_carrot": { "seed_cost": 50, "grow_time_seconds": 900.0, "harvest_quantity": 1, "max_stack": 99 }
+    }
+  },
+  "season": {
+    "seconds_per_day": 3600,
+    "days_per_season": 7,
+    "multipliers": {
+      "spring": { "production_mult": 1.0, "fertility_mult": 1.3, "growth_mult": 1.0, "offline_mult": 1.0 },
+      "summer": { "production_mult": 1.0, "fertility_mult": 1.0, "growth_mult": 1.2, "offline_mult": 1.0 },
+      "autumn": { "production_mult": 1.5, "fertility_mult": 1.0, "growth_mult": 1.0, "offline_mult": 1.0 },
+      "winter": { "production_mult": 1.0, "fertility_mult": 1.0, "growth_mult": 1.0, "offline_mult": 1.3 }
+    }
+  },
+  "ui": {
+    "breed_reveal_duration": 1.5
+  },
+  "expeditions": {
+    "zones": [
+      {
+        "zone_id": "near_forest",
+        "display_name": "Rừng Gần",
+        "duration_seconds": 1800,
+        "min_rabbits": 1,
+        "max_rabbits": 5,
+        "required_trait": null,
+        "requires_prestige": 0,
+        "loot_table": [
+          { "item_id": "star_grass", "weight": 60, "quantity_min": 1, "quantity_max": 3 },
+          { "item_id": "herb", "weight": 40, "quantity_min": 1, "quantity_max": 2 }
+        ]
+      },
+      {
+        "zone_id": "east_meadow",
+        "display_name": "Đồng Cỏ Phía Đông",
+        "duration_seconds": 7200,
+        "min_rabbits": 2,
+        "max_rabbits": 5,
+        "required_trait": null,
+        "requires_prestige": 0,
+        "loot_table": [
+          { "item_id": "special_carrot", "weight": 50, "quantity_min": 1, "quantity_max": 2 },
+          { "item_id": "coin_bag_x3", "weight": 50, "quantity_min": 1, "quantity_max": 1 }
+        ]
+      },
+      {
+        "zone_id": "snow_mountain",
+        "display_name": "Núi Tuyết",
+        "duration_seconds": 28800,
+        "min_rabbits": 3,
+        "max_rabbits": 5,
+        "required_trait": "Sturdy",
+        "requires_prestige": 0,
+        "loot_table": [
+          { "item_id": "mystery_mushroom", "weight": 60, "quantity_min": 1, "quantity_max": 1 },
+          { "item_id": "blueprint", "weight": 40, "quantity_min": 1, "quantity_max": 1 }
+        ]
+      },
+      {
+        "zone_id": "ancient_lands",
+        "display_name": "Vùng Đất Cổ",
+        "duration_seconds": 86400,
+        "min_rabbits": 5,
+        "max_rabbits": 5,
+        "required_trait": null,
+        "requires_prestige": 0,
+        "loot_table": [
+          { "item_id": "golden_apple", "weight": 60, "quantity_min": 1, "quantity_max": 1 },
+          { "item_id": "legendary_shard", "weight": 40, "quantity_min": 1, "quantity_max": 1 }
+        ]
+      },
+      {
+        "zone_id": "rabbit_universe",
+        "display_name": "Vũ trụ Thỏ",
+        "duration_seconds": 172800,
+        "min_rabbits": 1,
+        "max_rabbits": 5,
+        "required_trait": null,
+        "requires_prestige": 1,
+        "loot_table": [
+          { "item_id": "cosmic_gene", "weight": 50, "quantity_min": 1, "quantity_max": 1 },
+          { "item_id": "ultra_shard", "weight": 50, "quantity_min": 1, "quantity_max": 1 }
+        ]
+      }
+    ]
   },
   "genetics": {
     "rarity_weights": {

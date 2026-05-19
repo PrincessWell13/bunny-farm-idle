@@ -1,56 +1,304 @@
 # Technical Requirement ID Registry
 #
 # PURPOSE: Persistent, stable IDs for every GDD technical requirement.
-# Prevents TR-ID renumbering across /architecture-review runs, which would
-# break story references.
+# Prevents TR-ID renumbering across /architecture-review runs.
 #
 # RULES:
 #   - IDs are PERMANENT. Never renumber, never delete (use status: deprecated).
 #   - Add new entries only at the END of each system's list.
 #   - When a GDD requirement is reworded (same intent): update `requirement`
 #     text and add a `revised` date. The ID stays the same.
-#   - When a requirement is removed from the GDD: set status: deprecated.
-#   - When a requirement is split or replaced: set status: superseded-by with
-#     the new TR-ID(s).
 #
-# WRITTEN BY: /architecture-review (appends new entries, never overwrites)
-# READ BY:    /create-stories (embed IDs in stories)
-#             /story-done (look up current requirement text at review time)
-#             /story-readiness (validate TR-ID exists and is active)
+# WRITTEN BY: /architecture-review (appends new entries)
+# READ BY:    /create-stories, /story-done, /story-readiness
 #
 # ID FORMAT: TR-[system-slug]-[NNN]
-#   system-slug = short slug matching the GDD system name
-#   NNN = three-digit zero-padded sequence per system, starting at 001
-#
 # STATUS VALUES: active | deprecated | superseded-by: TR-[system]-NNN
 
-version: 1
-last_updated: ""
+version: 2
+last_updated: "2026-05-18"
 
-requirements: []
+requirements:
 
-# --- EXAMPLE ENTRIES (remove when first real entries are added) ---
-#
-# - id: TR-combat-001
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Player takes damage from enemies based on attack power minus defence"
-#   created: 2026-03-10
-#   revised: ""
-#   status: active
-#
-# - id: TR-combat-002
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Combo window timing is 0.4 seconds between hits"
-#   created: 2026-03-10
-#   revised: "2026-04-01"
-#   status: active
-#
-# - id: TR-combat-003
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Old damage formula using raw stats"
-#   created: 2026-03-10
-#   revised: ""
-#   status: superseded-by: TR-combat-001
+  # === Rabbit (ADR-0005) ===
+  - id: TR-rabbit-001
+    system: rabbit
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.1"
+    requirement: "4 visible stats (Hunger, Happiness, Health, Cleanliness) with real-time decay"
+    adrs: [ADR-0005]
+    created: "2026-05-16"
+    status: active
+
+  - id: TR-rabbit-002
+    system: rabbit
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.1"
+    requirement: "Hidden stats (Growth Rate, Fertility, Mutation Chance, Lifespan, Aura)"
+    adrs: [ADR-0005]
+    created: "2026-05-16"
+    status: active
+
+  - id: TR-rabbit-003
+    system: rabbit
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.1"
+    requirement: "5-stage lifecycle (Baby → Juvenile → Adult → Elder → Sanctuary)"
+    adrs: [ADR-0005]
+    created: "2026-05-16"
+    status: active
+
+  - id: TR-rabbit-004
+    system: rabbit
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.1"
+    requirement: "Aura buff system — special rabbits buff neighbours"
+    adrs: [ADR-0005]
+    created: "2026-05-16"
+    status: active
+    notes: "Schema covered by ADR-0005; aura formula still missing (BLK-001)"
+
+  - id: TR-rabbit-005
+    system: rabbit
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.2"
+    requirement: "Parentage tracking for Gene Journal / genealogy tree"
+    adrs: [ADR-0005]
+    created: "2026-05-16"
+    status: active
+
+  # === Genetics (ADR-0006) ===
+  - id: TR-genetics-001
+    system: genetics
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.2"
+    requirement: "6-slot genome (color, size, ears, trait1, trait2, special) per rabbit"
+    adrs: [ADR-0006]
+    created: "2026-05-16"
+    status: active
+
+  - id: TR-genetics-002
+    system: genetics
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.2"
+    requirement: "Offspring inherits 1 allele per slot from each parent"
+    adrs: [ADR-0006, ADR-0002]
+    created: "2026-05-16"
+    status: active
+
+  - id: TR-genetics-003
+    system: genetics
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.2"
+    requirement: "Mutation roll at base 5%, modifiable by items/traits"
+    adrs: [ADR-0006, ADR-0004]
+    created: "2026-05-16"
+    status: active
+
+  - id: TR-genetics-004
+    system: genetics
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.2"
+    requirement: "Gene Preview with probability tables before breeding"
+    adrs: [ADR-0006, ADR-0003]
+    created: "2026-05-16"
+    status: active
+
+  - id: TR-genetics-005
+    system: genetics
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.2"
+    requirement: "Trait stacking: synergy, cancellation, hidden ultra combos"
+    adrs: [ADR-0006]
+    created: "2026-05-16"
+    status: active
+
+  - id: TR-genetics-006
+    system: genetics
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.2"
+    requirement: "7 color-rarity tiers with specific probability weights"
+    adrs: [ADR-0006, ADR-0004]
+    created: "2026-05-16"
+    status: active
+
+  # === Economy (ADR-0001 + ADR-0003) ===
+  - id: TR-economy-001
+    system: economy
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.14"
+    requirement: "4-currency system (Coin, Gem, Affection, Energy) accessible to all systems"
+    adrs: [ADR-0001, ADR-0003]
+    created: "2026-05-16"
+    status: active
+
+  # === Idle Production (ADR-0007) ===
+  - id: TR-idle-001
+    system: idle
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.12"
+    requirement: "Real-time idle production (online = 100%)"
+    adrs: [ADR-0007]
+    created: "2026-05-16"
+    status: active
+
+  - id: TR-idle-002
+    system: idle
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.12"
+    requirement: "Offline catch-up applied on app resume"
+    adrs: [ADR-0007, ADR-0001]
+    created: "2026-05-16"
+    status: active
+
+  - id: TR-idle-003
+    system: idle
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.12"
+    requirement: "4 tiered offline multipliers (background 75%, <4h 60%, 4–12h 50%, >12h 40%)"
+    adrs: [ADR-0007, ADR-0004]
+    created: "2026-05-16"
+    status: active
+
+  # === Save System (ADR-0008) ===
+  - id: TR-save-001
+    system: save
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§5"
+    requirement: "Full game state serialisation/deserialisation"
+    adrs: [ADR-0008, ADR-0001, ADR-0002]
+    created: "2026-05-16"
+    status: active
+
+  - id: TR-save-002
+    system: save
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§5"
+    requirement: "Cloud backup / cross-device progress"
+    adrs: [ADR-0008]
+    created: "2026-05-16"
+    status: active
+
+  - id: TR-save-003
+    system: save
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§5"
+    requirement: "Local save survives no-network launch"
+    adrs: [ADR-0008]
+    created: "2026-05-16"
+    status: active
+
+  # === Season (covered by ADR-0007 + ADR-0004) ===
+  - id: TR-season-001
+    system: season
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.5"
+    requirement: "Season multipliers affect production"
+    adrs: [ADR-0007]
+    created: "2026-05-16"
+    status: active
+
+  - id: TR-season-002
+    system: season
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.5"
+    requirement: "Season modifies global fertility, growth, production"
+    adrs: [ADR-0004]
+    created: "2026-05-16"
+    status: active
+
+  # === Prestige (covered by multiple ADRs) ===
+  - id: TR-prestige-001
+    system: prestige
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§4"
+    requirement: "Prestige bonuses persist and affect production"
+    adrs: [ADR-0007]
+    created: "2026-05-16"
+    status: active
+
+  - id: TR-prestige-002
+    system: prestige
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§4"
+    requirement: "Selective reset (keep some data, wipe rest)"
+    adrs: [ADR-0001]
+    created: "2026-05-16"
+    status: active
+
+  - id: TR-prestige-003
+    system: prestige
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§4"
+    requirement: "Up to 20 prestige levels with stacking bonuses"
+    adrs: [ADR-0004]
+    created: "2026-05-16"
+    status: active
+
+  # === Habitat (data only — system ADR pending) ===
+  - id: TR-habitat-001
+    system: habitat
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.4"
+    requirement: "Hutch capacity 4–24 by level"
+    adrs: [ADR-0004]
+    created: "2026-05-16"
+    status: active
+    notes: "Data only — full HabitatSystem ADR pending (ADR-0010)"
+
+  # === UI (ADR-0003) ===
+  - id: TR-ui-004
+    system: ui
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§6"
+    requirement: "≤2 taps for frequent actions"
+    adrs: [ADR-0003]
+    created: "2026-05-16"
+    status: active
+
+  # === Guild (partial — backend surface only) ===
+  - id: TR-guild-001
+    system: guild
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.9"
+    requirement: "Guild requires multiplayer backend (Firebase Auth + Realtime DB)"
+    adrs: [ADR-0008]
+    created: "2026-05-16"
+    status: active
+    notes: "Backend surface only — full GuildSystem ADR (raid logic) pending (ADR-0014)"
+
+  # === FoodSystem (ADR-0009) ===
+  - id: TR-food-001
+    system: food
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.3"
+    requirement: "Food inventory dictionary + farm plot grow timers + feeding pipeline"
+    adrs: [ADR-0009]
+    created: "2026-05-18"
+    status: active
+
+  # === HabitatSystem (ADR-0010) ===
+  - id: TR-habitat-002
+    system: habitat
+    gdd: design/gdd/bunny-farm-idle-master.md
+    gdd_section: "§3.4"
+    requirement: "Hutch slot allocation + rabbit assignment with capacity enforcement"
+    adrs: [ADR-0010]
+    created: "2026-05-18"
+    status: active
+
+  # === KNOWN GAPS (no ADR yet — to be created during Sprint 03+) ===
+  # The following TR-IDs are reserved but not yet active. They will be added
+  # as `status: active` once their corresponding ADRs are written.
+  # TR-expedition-001   Async expedition timer + reward roll (ADR-0011)
+  # TR-quest-001        Daily/weekly quest tracking (ADR-0012)
+  # TR-event-001        Time-limited world events (ADR-0013)
+  # TR-guild-002        Guild Boss Raid 7-day contribution window (ADR-0014)
+  # TR-merchant-001     Random merchant rotation + pricing (ADR-0015)
+  # TR-puzzle-003       Gene Journal cross-player sharing (ADR-0016)
+  # TR-collection-001   Pokedex completion tracking + rewards (ADR-0017)
+  # TR-economy-002      Rabbit sale value formula (ADR-0018)
+  # TR-idle-004         Item-based offline modifier stacking (ADR-0019)
+  # TR-shop-001         Shop catalogue + pricing curve (ADR-0020)
+  # TR-ad-001           Rewarded ad multiplier (ADR-0021)
+  # TR-iap-001          In-app purchase entitlement (ADR-0022)

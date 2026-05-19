@@ -14,6 +14,10 @@ var _max_offline_hours: float = 72.0
 ## prestige_level (string key) → offline_production_bonus (float). Loaded from balance.json.
 var _prestige_offline_bonuses: Dictionary = {}
 
+## Maps prestige level (int key) → growth_rate_bonus (float). Loaded from balance.json
+## prestige.bonuses_per_level. Only levels with a growth_rate_bonus key are stored.
+var _prestige_growth_bonuses: Dictionary = {}  # int → float
+
 ## Injected rabbit list for unit testing — when non-empty, bypasses RabbitSystem autoload.
 var _rabbit_override: Array[RabbitData] = []
 
@@ -41,12 +45,14 @@ func _calculate(delta_seconds: float, offline_multiplier: float) -> EarningsRepo
 	var hutch_bonus: float = _get_hutch_bonus()
 	var season_mult: float = _get_season_multiplier()
 	var prestige_bonus: float = _get_prestige_bonus()
+	var prestige_growth: float = _get_prestige_growth_bonus()
 
 	var raw: float = (productive_count
 			* _base_rate
 			* hutch_bonus
 			* season_mult
 			* prestige_bonus
+			* prestige_growth
 			* offline_multiplier
 			* delta_seconds)
 
@@ -63,6 +69,7 @@ func _calculate(delta_seconds: float, offline_multiplier: float) -> EarningsRepo
 			"hutch_bonus": hutch_bonus,
 			"season_mult": season_mult,
 			"prestige_bonus": prestige_bonus,
+			"prestige_growth": prestige_growth,
 		}
 	]
 	return report
@@ -116,6 +123,30 @@ func _get_prestige_bonus() -> float:
 	return 1.0 + bonus
 
 
+## Returns 1.0 + growth_rate_bonus for the player's prestige level (from GameState).
+## Uses the highest defined level <= prestige_count from balance.json prestige.bonuses_per_level.
+## Level 0, empty bonus table, or no matching level → returns 1.0.
+##
+## Example:
+##   prestige_count = 3, bonuses {1: 0.05, 2: 0.10, 3: 0.15} → returns 1.15
+##   prestige_count = 7, bonuses {1..5 defined} → returns 1.25 (highest ≤ 7 is level 5)
+func _get_prestige_growth_bonus() -> float:
+	var gs: Node = Engine.get_singleton("GameState") if Engine.has_singleton("GameState") \
+			else get_node_or_null("/root/GameState")
+	var prestige_count: int = 0
+	if gs != null:
+		prestige_count = gs.prestige_count
+	if prestige_count <= 0 or _prestige_growth_bonuses.is_empty():
+		return 1.0
+	var best_level: int = 0
+	for level: int in _prestige_growth_bonuses:
+		if level <= prestige_count and level > best_level:
+			best_level = level
+	if best_level == 0:
+		return 1.0
+	return 1.0 + (_prestige_growth_bonuses[best_level] as float)
+
+
 ## Returns the offline multiplier tier for the given elapsed seconds.
 ## Background multiplier (0.75) handled at call site via was_backgrounded flag.
 func _get_offline_multiplier(offline_seconds: float) -> float:
@@ -159,3 +190,6 @@ func _load_balance_data() -> void:
 		var prod_bonus: float = level_bonuses.get("offline_production_bonus", 0.0) as float
 		if prod_bonus > 0.0:
 			_prestige_offline_bonuses[level_str] = prod_bonus
+		var growth_bonus: float = level_bonuses.get("growth_rate_bonus", 0.0) as float
+		if growth_bonus > 0.0:
+			_prestige_growth_bonuses[int(level_str)] = growth_bonus

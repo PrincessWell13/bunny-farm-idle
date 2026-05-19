@@ -16,6 +16,10 @@ var last_save_timestamp: int = 0
 var is_dirty: bool = false
 ## forward-ref: update to EarningsReport when idle-production-system story-001 is done (ADR-0007)
 var pending_offline_report: Variant = null
+## food_id (String) → quantity (int). Sole mutator: FoodSystem (ADR-0009).
+var food_inventory: Dictionary = {}
+## Active farm plots. Each element: {food_id, started_at, duration}. Sole mutator: FoodSystem (ADR-0009).
+var farm_plots: Array = []
 
 func _ready() -> void:
 	settings = {
@@ -29,6 +33,13 @@ func _ready() -> void:
 ## This is the ONLY valid way to mark state as needing a save — never assign is_dirty directly.
 func mark_dirty() -> void:
 	is_dirty = true
+
+## Resets transient gameplay state to blank defaults.
+## Called by tests and new-game flows to guarantee a clean slate.
+func _reset_state() -> void:
+	food_inventory = {}
+	farm_plots = []
+
 
 ## Selective prestige wipe. Caller (PrestigeSystem) filters data and passes what to preserve.
 ## keep keys: "rabbits" (Array), "hutches" (Array), "collection_registry" (Dictionary)

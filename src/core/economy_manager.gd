@@ -45,3 +45,24 @@ func get_balance(currency: CurrencyType) -> int:
 ## Does not emit currency_changed — boot population must not spam the signal.
 func set_balance(currency: CurrencyType, amount: int) -> void:
 	_balances[currency] = max(0, amount)
+
+
+## Adds expedition loot rewards by item_id string (ADR-0011 R4).
+## Routes known item_ids to their corresponding CurrencyType; unknown ids are logged.
+## Called by ExpeditionSystem.collect() — item_id comes from balance.json loot_table entries.
+## GDScript does not support overloading, so this wrapper uses a distinct name.
+##
+## Example:
+##   EconomyManager.add_loot_reward("star_dust", 10)
+func add_loot_reward(item_id: String, quantity: int) -> void:
+	match item_id:
+		"carrot_coin":
+			add(CurrencyType.CARROT_COIN, quantity)
+		"star_dust":
+			add(CurrencyType.STAR_DUST, quantity)
+		"crystal_gem":
+			add(CurrencyType.CRYSTAL_GEM, quantity)
+		"gene_fragment":
+			add(CurrencyType.GENE_FRAGMENT, quantity)
+		_:
+			push_warning("EconomyManager.add_loot_reward: unknown item_id '%s' — reward dropped" % item_id)

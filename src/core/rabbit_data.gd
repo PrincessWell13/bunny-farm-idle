@@ -28,3 +28,6 @@ var birth_timestamp: int = 0
 var parent_a_id: String = ""
 var parent_b_id: String = ""
 var hutch_id: String = ""
+## True while this rabbit is assigned to an active expedition slot (ADR-0011).
+## Only RabbitSystem.send_on_expedition() and RabbitSystem.return_from_expedition() may write this.
+var is_on_expedition: bool = false
