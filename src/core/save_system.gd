@@ -134,6 +134,8 @@ func _serialise_game_state() -> Dictionary:
 		"hutches": [],
 		"collection_registry": gs.collection_registry.duplicate(),
 		"active_expeditions": gs.active_expeditions.duplicate(),
+		"food_inventory": gs.food_inventory.duplicate(),
+		"farm_plots": gs.farm_plots.duplicate(),
 		"economy": _serialise_economy(),
 		"settings": gs.settings.duplicate(),
 	}
@@ -147,6 +149,8 @@ func _populate_game_state(data: Dictionary) -> void:
 	gs.prestige_count = data.get("prestige_count", 0)
 	gs.collection_registry = data.get("collection_registry", {})
 	gs.active_expeditions = data.get("active_expeditions", [])
+	gs.food_inventory = data.get("food_inventory", {})
+	gs.farm_plots = data.get("farm_plots", [])
 	gs.settings = data.get("settings", gs.settings)
 	gs.last_save_timestamp = data.get("last_save_timestamp", 0)
 	var raw_rabbits: Array = data.get("rabbits", [])

@@ -40,6 +40,12 @@
 - Blockers: None
 - Next: /story-done production/epics/event-bus/story-001-signal-catalogue.md
 
+## Session Extract — /story-done 2026-05-20
+- Verdict: COMPLETE (×3) + COMPLETE WITH NOTES (×1)
+- Stories closed: expedition-system/story-001, story-002, story-003; prestige-system/story-002
+- Tech debt logged: None (advisory deviation noted in expedition story-001 completion notes)
+- Next recommended: S05-02 (balance.json food keys) or S05-04 (confirm CI badge)
+
 ## Session Extract — /story-done 2026-05-16
 - Verdict: COMPLETE WITH NOTES
 - Story: production/epics/event-bus/story-001-signal-catalogue.md — EventBus Signal Catalogue
@@ -816,3 +822,75 @@ Sau khi có 8 ADRs này → chạy `/create-epics`
 - Story: production/epics/prestige-system/story-001-can-prestige-execute.md — PrestigeSystem story-001 can_prestige() + execute_prestige()
 - Tech debt logged: None
 - Next recommended: S04-12 PrestigeSystem story-002 prestige bonus (production/epics/prestige-system/story-002-prestige-bonus.md)
+
+## Session Extract — /dev-story 2026-05-20
+- Story: production/epics/hud/story-006-expedition-slot-panel.md — Expedition Slot Panel (S05-09)
+- Files changed: src/ui/expedition_slot_ui.gd (created), src/ui/expedition_panel.gd (created)
+- Test written: None — UI story; manual evidence required at production/qa/evidence/s05-09-expedition-panel-evidence.md
+- Blockers: None
+- Next: /story-done production/epics/hud/story-006-expedition-slot-panel.md
+
+## Session Extract — /story-done 2026-05-20
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/hud/story-006-expedition-slot-panel.md — Expedition Slot Panel
+- Tech debt logged: None
+- Next recommended: S05-10 — Prestige Button (production/epics/hud/story-007-prestige-button.md)
+
+## Session Extract — /dev-story + /story-done S05-10 2026-05-22
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/hud/story-007-prestige-button.md — Prestige Button
+- S05-02 also closed: balance.json food keys (seed_cost/grow_time_seconds/harvest_quantity) confirmed already present from food-system story-004
+- Files changed: src/ui/hud.gd (extended with prestige_button + prestige_confirm_dialog exports, _refresh_prestige_button, _on_prestige_tapped, _on_prestige_confirmed, _on_prestige_state_changed; currency_changed handler also triggers refresh)
+- Evidence doc: production/qa/evidence/s05-10-prestige-button-evidence.md (screenshot checklist pending scene wiring)
+- Tech debt logged: None
+- Sprint 05 status: S05-01 ✅, S05-02 ✅, S05-05 ✅, S05-09 ✅, S05-10 ✅ — 5/17 done
+- Remaining must-haves: S05-03 (difficulty-curve review), S05-04 (CI badge), S05-06 (food widget), S05-07 (farm plot UI), S05-08 (save/load round-trip test)
+- Next recommended: S05-08 (save/load sprint-04 round-trip test, no blockers) OR S05-06 (food inventory widget, no blocker now S05-02 done)
+
+## Session Extract — /dev-story S05-08 2026-05-22
+- Story: production/epics/save-system/story-s05-08-save-load-round-trip.md — Save/Load Round-Trip Sprint-04 Fields (C04-06)
+- Story file created first (was missing — only sprint task existed)
+- Root cause fixed: _serialise_game_state() was missing food_inventory + farm_plots keys; _populate_game_state() was missing the same two fields
+- Files changed: src/core/save_system.gd (added food_inventory + farm_plots to both _serialise_game_state and _populate_game_state), tests/integration/core/save_load_sprint04_test.gd (created, 8 test functions)
+- Test written: tests/integration/core/save_load_sprint04_test.gd (8 tests — AC-1 through AC-8)
+- Blockers: None
+- Sprint 05 status: S05-01 ✅, S05-02 ✅, S05-05 ✅, S05-08 ✅, S05-09 ✅, S05-10 ✅ — 6/17 done
+- Remaining must-haves: S05-03 (difficulty-curve review), S05-04 (CI badge), S05-06 (food inventory widget), S05-07 (farm plot UI)
+- Next: /story-done production/epics/save-system/story-s05-08-save-load-round-trip.md then S05-06 (food inventory widget)
+
+## Session Extract — /dev-story S05-06 2026-05-22
+- Story: production/epics/hud/story-004-food-inventory-widget.md — Food Inventory Widget
+- Files changed: src/ui/hud.gd (Story-004 section: _food_counts, _food_labels, register_food_label, get_food_count, _refresh_food_display, _update_food_label, _on_food_harvested, _on_food_used), src/core/food_system.gd (emit EventBus.food_used after successful deduction in feed_rabbit)
+- Test written: None — UI story; evidence doc at production/qa/evidence/s05-06-food-widget-evidence.md
+- Deviation: story referenced rabbit_fed signal (doesn't exist) → used food_used(food_id) instead (already in event_bus.gd, now emitted by feed_rabbit)
+- Blockers: None
+- Next: /story-done production/epics/hud/story-004-food-inventory-widget.md then S05-07 (farm plot progress UI)
+
+## Session Extract — /story-done S05-08 2026-05-22
+- Verdict: COMPLETE
+- Story: production/epics/save-system/story-s05-08-save-load-round-trip.md — Save/Load Round-Trip Sprint-04 Fields
+- Tech debt logged: None
+- Closes QA condition C04-06
+- Next recommended: S05-06 — HUD story-004 Food Inventory Widget (production/epics/hud/story-004-food-inventory-widget.md)
+
+## Session Extract — /dev-story + /story-done S05-07 2026-05-22
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/hud/story-005-farm-plot-progress-ui.md — Farm Plot Progress UI
+- Files changed: src/ui/hud.gd (Story-005 section: plot_slot_labels/buttons exports, _countdown_timer, _refresh_all_plots, _render_plot, _render_empty, _update_countdowns, on_plot_tapped, farm_plots_updated wired), src/core/food_system.gd (added harvest_plot())
+- Evidence doc: production/qa/evidence/s05-07-farm-plot-ui-evidence.md (screenshots pending scene wiring)
+- Advisory: farm_plots_updated carries no params — HUD reads via get_farm_plot_state() (ADR-0003 compliant)
+- Tech debt logged: None
+- Sprint 05 status: S05-01 ✅, S05-02 ✅, S05-05 ✅, S05-06 ✅, S05-07 ✅, S05-08 ✅, S05-09 ✅, S05-10 ✅ — 8/17 done
+- Remaining must-haves: S05-03 (difficulty-curve review), S05-04 (CI badge)
+- Next recommended: S05-03 (difficulty-curve design review) OR S05-11 (PrestigeSystem _load_from_text, should-have)
+
+## Session Extract — /design-review difficulty-curve.md 2026-05-22
+- Verdict: MAJOR REVISION NEEDED → all 6 blockers resolved in-session (doc now v1.1)
+- Specialists: game-designer, systems-designer, economy-designer, qa-lead, creative-director
+- Critical fixes: (1) trait_effects_multiplier added to CC formula; (2) get_harvest_bonus() crash fixed → get_active_multipliers()["production_mult"]; (3) Winter offline_mult dead path fixed → _get_offline_season_multiplier(); (4) prestige formula corrected to show two terms; (5) pity counter scope/cascade specified (per-account, independent counters); (6) cleanliness stub documented
+- Files changed: design/difficulty-curve.md (v1.1), src/core/idle_production_system.gd (get_harvest_bonus bug + offline season mult), design/gdd/systems-index.md (created), design/gdd/reviews/difficulty-curve-review-log.md (created)
+- S05-03 CLOSED
+- Sprint 05 status: S05-01 ✅, S05-02 ✅, S05-03 ✅, S05-05 ✅, S05-06 ✅, S05-07 ✅, S05-08 ✅, S05-09 ✅, S05-10 ✅ — 9/17 done
+- Remaining must-have: S05-04 (CI badge — human action required)
+- Advisory open items: Autumn dominant strategy, prestige bonus size, Tier3→4 ramp, missing Cliffs 2 and 4
+- Next recommended: S05-04 (CI badge, human-side) then sprint close-out sequence

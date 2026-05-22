@@ -1,7 +1,7 @@
 # Story 001: start_expedition — Slot Model and Rabbit Locking
 
 > **Epic**: ExpeditionSystem
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Feature
 > **Type**: Logic
 > **Manifest Version**: 2026-05-18
@@ -339,7 +339,7 @@ Note: the existing Control Manifest signal registry (`rabbit_sent_on_expedition(
 **Story Type**: Logic
 **Required evidence**: `tests/unit/core/expedition_system_start_test.gd` — must exist and pass
 
-**Status**: [ ] `tests/unit/core/expedition_system_start_test.gd` — not yet written
+**Status**: [x] `tests/unit/core/expedition_system_start_test.gd` — exists and passes (CI 2026-05-20)
 
 ---
 
@@ -356,8 +356,8 @@ Note: the existing Control Manifest signal registry (`rabbit_sent_on_expedition(
 
 ## Completion Notes
 
-**Completed**: —
-**Criteria**: /12 passing
-**Deviations**: —
-**Test Evidence**: —
-**Code Review**: —
+**Completed**: 2026-05-20
+**Criteria**: 12/12 passing
+**Deviations**: ADVISORY — `rabbit_sent_on_expedition` signal in the original Control Manifest uses a different signature (`rabbit: RabbitData, location: String`) vs ADR-0011 slot-level signals. Both sets coexist; no conflict. Schedule a manifest refresh to supersede the old signal definition when CollectionSystem is wired.
+**Test Evidence**: Logic — `tests/unit/core/expedition_system_start_test.gd` (exists, CI 2026-05-20)
+**Code Review**: Skipped — Lean mode

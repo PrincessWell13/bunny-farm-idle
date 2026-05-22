@@ -1,7 +1,7 @@
 # Story 002: Prestige Bonus — Stacking Production Multiplier in IdleProductionSystem
 
 > **Epic**: PrestigeSystem
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Core
 > **Type**: Logic
 > **Manifest Version**: 2026-05-18
@@ -164,7 +164,7 @@ var prestige_growth: float = _get_prestige_growth_bonus()
 **Story Type**: Logic
 **Required evidence**: `tests/unit/core/prestige_bonus_test.gd` — must exist and pass
 
-**Status**: [ ] not yet written
+**Status**: [x] `tests/unit/core/prestige_bonus_test.gd` — exists and passes (CI 2026-05-20)
 
 ---
 
@@ -178,8 +178,8 @@ var prestige_growth: float = _get_prestige_growth_bonus()
 
 ## Completion Notes
 
-**Completed**: —
-**Criteria**: —
-**Deviations**: —
-**Test Evidence**: Logic — `tests/unit/core/prestige_bonus_test.gd`
-**Code Review**: —
+**Completed**: 2026-05-20
+**Criteria**: 7/7 passing
+**Deviations**: None
+**Test Evidence**: Logic — `tests/unit/core/prestige_bonus_test.gd` (exists, CI 2026-05-20)
+**Code Review**: Skipped — Lean mode

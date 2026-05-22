@@ -1,7 +1,7 @@
 # Story 003: _resolve_offline_expeditions — Boot-Time Catch-Up
 
 > **Epic**: ExpeditionSystem
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Feature
 > **Type**: Integration
 > **Manifest Version**: 2026-05-18
@@ -204,7 +204,7 @@ This pattern allows unit tests to pass any `now` value without mocking the engin
 **Story Type**: Integration
 **Required evidence**: `tests/integration/core/expedition_system_offline_test.gd` — must exist and pass
 
-**Status**: [ ] `tests/integration/core/expedition_system_offline_test.gd` — not yet written
+**Status**: [x] `tests/integration/core/expedition_system_offline_test.gd` — exists and passes (CI 2026-05-20)
 
 ---
 
@@ -219,8 +219,8 @@ This pattern allows unit tests to pass any `now` value without mocking the engin
 
 ## Completion Notes
 
-**Completed**: —
-**Criteria**: /10 passing
-**Deviations**: —
-**Test Evidence**: —
-**Code Review**: —
+**Completed**: 2026-05-20
+**Criteria**: 10/10 passing
+**Deviations**: None
+**Test Evidence**: Integration — `tests/integration/core/expedition_system_offline_test.gd` (exists, CI 2026-05-20)
+**Code Review**: Skipped — Lean mode

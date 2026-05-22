@@ -57,10 +57,14 @@ This epic is complete when:
 
 | # | Story | Type | Status | ADR |
 |---|-------|------|--------|-----|
-| 001 | [Currency Header Display](story-001-currency-header.md) | Integration | Ready | ADR-0001, ADR-0003 |
-| 002 | [Bottom Navigation Bar](story-002-nav-bar.md) | Integration | Ready | ADR-0003 |
-| 003 | [Notification Toast](story-003-notification-toast.md) | UI | Ready | ADR-0003 |
+| 001 | [Currency Header Display](story-001-currency-header.md) | Integration | Complete | ADR-0001, ADR-0003 |
+| 002 | [Bottom Navigation Bar](story-002-nav-bar.md) | Integration | Complete | ADR-0003 |
+| 003 | [Notification Toast](story-003-notification-toast.md) | UI | Complete | ADR-0003 |
+| 004 | [Food Inventory Widget](story-004-food-inventory-widget.md) | UI | Ready | ADR-0003 |
+| 005 | [Farm Plot Progress UI](story-005-farm-plot-progress-ui.md) | UI | Ready | ADR-0003, ADR-0009 |
+| 006 | [Expedition Slot Panel](story-006-expedition-slot-panel.md) | UI | Complete | ADR-0003, ADR-0011 |
+| 007 | [Prestige Button](story-007-prestige-button.md) | UI | Complete | ADR-0003, ADR-0001 |
 
 ## Next Step
 
-Run `/dev-story production/epics/hud/story-001-currency-header.md` to begin implementation.
+Run `/dev-story production/epics/hud/story-004-food-inventory-widget.md` to begin implementation.

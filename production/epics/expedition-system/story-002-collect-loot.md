@@ -1,7 +1,7 @@
 # Story 002: collect — Loot Roll and Rabbit Unlock
 
 > **Epic**: ExpeditionSystem
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Feature
 > **Type**: Integration
 > **Manifest Version**: 2026-05-18
@@ -232,7 +232,7 @@ func return_from_expedition(rabbit_id: String) -> void:
 **Story Type**: Integration
 **Required evidence**: `tests/integration/core/expedition_system_collect_test.gd` — must exist and pass
 
-**Status**: [ ] `tests/integration/core/expedition_system_collect_test.gd` — not yet written
+**Status**: [x] `tests/integration/core/expedition_system_collect_test.gd` — exists and passes (CI 2026-05-20)
 
 ---
 
@@ -248,8 +248,8 @@ func return_from_expedition(rabbit_id: String) -> void:
 
 ## Completion Notes
 
-**Completed**: —
-**Criteria**: /12 passing
-**Deviations**: —
-**Test Evidence**: —
-**Code Review**: —
+**Completed**: 2026-05-20
+**Criteria**: 12/12 passing
+**Deviations**: None
+**Test Evidence**: Integration — `tests/integration/core/expedition_system_collect_test.gd` (exists, CI 2026-05-20)
+**Code Review**: Skipped — Lean mode

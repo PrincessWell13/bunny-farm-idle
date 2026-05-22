@@ -1,8 +1,8 @@
 # Difficulty Curve — Bunny Farm Idle
 
-**Version**: 1.0
-**Date**: 2026-05-19
-**Status**: Draft — pending design-review
+**Version**: 1.1
+**Date**: 2026-05-22
+**Status**: Revised — design-review MAJOR REVISION NEEDED → blockers addressed (v1.1)
 
 ---
 
@@ -154,29 +154,49 @@ be stronger," churn spikes here.
 CC_per_second = rabbits_alive × base_cc_per_rabbit_per_second
                 × cleanliness_multiplier
                 × season_multiplier
-                × prestige_bonus_multiplier
+                × prestige_production_multiplier
+                × prestige_growth_multiplier
+                × trait_effects_multiplier
 ```
 
 **Variable definitions:**
-- `rabbits_alive` — count of Adult rabbits in all hutches (Baby and Juvenile do not
+- `rabbits_alive` — count of Adult + Elder rabbits in all hutches (Baby and Juvenile do not
   produce). Range: 0–24 (max Tier-5 hutch capacity).
-- `base_cc_per_rabbit_per_second` — 0.05 (balance.json key:
-  `idle_production.base_cc_per_rabbit_per_second`). Range: 0.01–0.20.
+- `base_cc_per_rabbit_per_second` — 0.05 (balance.json: `idle_production.base_cc_per_rabbit_per_second`). Range: 0.01–0.20.
 - `cleanliness_multiplier` — 1.2 if cleanliness ≥ 0.75; 1.0 if 0.40–0.74;
   0.8 if < 0.40 (balance.json: `habitat.cleanliness_thresholds`).
-- `season_multiplier` — 1.5 in Autumn; 1.0 in Spring, Summer; 1.0 base in Winter
-  (Winter applies to offline only). Source: `season.multipliers`.
-- `prestige_bonus_multiplier` — 1.0 + `prestige_bonuses_per_level[N].offline_production_bonus`.
-  Range: 1.0 (no prestige) to 1.25 (prestige 5).
+  *Note: wired via HabitatSystem.get_hutch_bonuses(); stub returns 1.0 until that epic is complete.*
+- `season_multiplier` — reads `season.multipliers.[season].production_mult` from balance.json.
+  Values: Autumn = 1.5; Spring, Summer, Winter = 1.0.
+  *Online production only. Offline production uses `offline_mult` from the same table — see §4.6.*
+  Implementation: `SeasonSystem.get_active_multipliers()["production_mult"]`.
+- `prestige_production_multiplier` — 1.0 + `prestige_bonuses_per_level[N].offline_production_bonus`.
+  Range: 1.0 (no prestige) to 1.25 (prestige 5). Applies to both online and offline production.
+- `prestige_growth_multiplier` — 1.0 + `prestige_bonuses_per_level[N].growth_rate_bonus`.
+  Range: 1.0 (no prestige) to 1.25 (prestige 5). Accelerates general production; stacks
+  multiplicatively with `prestige_production_multiplier`. At prestige 5: 1.25 × 1.25 = 1.5625×
+  combined prestige bonus.
+- `trait_effects_multiplier` — aggregate CC modifier from active traits on all productive
+  rabbits. Default 1.0 (no CC traits present). Example: one rabbit with Golden Touch (+25% CC)
+  in a hutch of 4 rabbits contributes 1.0 + (0.25 / 4) = 1.0625 to this term, applied globally.
+  *Implementation: computed by averaging per-rabbit trait modifiers across productive_count.
+  Implemented in a future genetics-production integration story. Until then, returns 1.0.*
 
-**Example — early game (4 Adult rabbits, clean hutch, Spring):**
+**Example — early game (4 Adult rabbits, clean hutch, Spring, no prestige, no CC traits):**
 ```
-CC/s = 4 × 0.05 × 1.2 × 1.0 × 1.0 = 0.24 CC/s = 864 CC/hour
+CC/s = 4 × 0.05 × 1.2 × 1.0 × 1.0 × 1.0 × 1.0 = 0.24 CC/s = 864 CC/hour
+```
+*Note: cleanliness_multiplier 1.2 requires HabitatSystem wired. With current stub (1.0):*
+`CC/s = 4 × 0.05 × 1.0 = 0.20 CC/s = 720 CC/hour`
+
+**Example — mid game (12 Adult rabbits, dirty hutch, Autumn, no prestige, no CC traits):**
+```
+CC/s = 12 × 0.05 × 0.8 × 1.5 × 1.0 × 1.0 × 1.0 = 0.72 CC/s = 2,592 CC/hour
 ```
 
-**Example — mid game (12 Adult rabbits, dirty hutch, Autumn):**
+**Example — late game (20 Adults, clean hutch, Autumn, prestige 5, no CC traits):**
 ```
-CC/s = 12 × 0.05 × 0.8 × 1.5 × 1.0 = 0.72 CC/s = 2,592 CC/hour
+CC/s = 20 × 0.05 × 1.2 × 1.5 × 1.25 × 1.25 × 1.0 = 2.8125 CC/s = 10,125 CC/hour
 ```
 
 ### 4.2 Time to First Hutch Upgrade (Tier 1 → Tier 2)
@@ -185,10 +205,16 @@ CC/s = 12 × 0.05 × 0.8 × 1.5 × 1.0 = 0.72 CC/s = 2,592 CC/hour
 T_upgrade = hutch_cost / CC_per_second / 3600   (in hours)
 ```
 
-**Base case (4 rabbits, clean hutch, no bonuses):**
+**Base case (4 rabbits, clean hutch, no bonuses) — target state once cleanliness wired:**
 ```
 CC/s = 4 × 0.05 × 1.2 = 0.24 CC/s
 T_upgrade = 500 / 0.24 / 3600 = 0.579 hours ≈ 35 minutes
+```
+
+**Base case (current build — cleanliness stub returns 1.0):**
+```
+CC/s = 4 × 0.05 × 1.0 = 0.20 CC/s
+T_upgrade = 500 / 0.20 / 3600 = 0.694 hours ≈ 42 minutes
 ```
 
 **Worst case (4 rabbits, dirty hutch, not yet cleaned after tutorial):**
@@ -197,8 +223,9 @@ CC/s = 4 × 0.05 × 0.8 = 0.16 CC/s
 T_upgrade = 500 / 0.16 / 3600 = 0.868 hours ≈ 52 minutes
 ```
 
-Target range: 35–55 minutes for first upgrade. Values outside this range require
-adjustment to `base_cc_per_rabbit_per_second` or `habitat.cleanliness_thresholds`.
+Target range: 35–55 minutes for first upgrade (42 min acceptable during build phase).
+Values outside this range require adjustment to `base_cc_per_rabbit_per_second` or
+`habitat.cleanliness_thresholds`.
 
 ### 4.3 Time to First Rare Rabbit (Breeding Probability)
 
@@ -219,9 +246,28 @@ pity_threshold_uncommon = 8   (guaranteed Uncommon if none in 8 cycles)
 pity_threshold_rare = 15      (guaranteed Rare if none in 15 cycles)
 ```
 
-With pity, worst-case first Rare = 15 cycles = 7.5 days at 2/day. Recommended
-target: 5–7 days worst case. Tuning lever: reduce `pity_threshold_rare` to 10 or
-increase `genetics.rarity_weights.rare` to 0.15.
+**Pity counter scope**: Per-account (global). A single pity counter tracks all
+breeding activity regardless of which rabbits are paired. Any completed breed
+increments the counter. This ensures casual players who breed infrequently still
+accumulate toward guaranteed outcomes.
+
+**Counter independence**: Uncommon pity (cycle 8) and Rare pity (cycle 15) use
+separate, independent counters. Triggering the Uncommon guarantee at cycle 8 does
+NOT reset the Rare counter — both counters continue counting from the same breed
+history. A player who triggers Uncommon pity at cycle 8 will reach Rare pity at
+cycle 15 (7 additional cycles later), not cycle 8+15=23.
+
+**Counter reset**: Both counters reset to 0 after their respective guaranteed
+outcome fires. Counters persist through prestige (see §5.3).
+
+With pity, worst-case first Rare = 15 cycles = 7.5 days at 2/day. This slightly
+exceeds the 5–7 day target. Recommended tuning: reduce `pity_threshold_rare` to 10
+(worst-case 5 days) before production build. Current 15 threshold is acceptable for
+early playtesting. Tuning lever also: increase `genetics.rarity_weights.rare` to 0.15.
+
+*Note: Pity thresholds are currently design-doc only — not yet in balance.json. Add
+`genetics.pity_threshold_uncommon` and `genetics.pity_threshold_rare` keys before
+GeneticsSystem pity implementation begins.*
 
 ### 4.4 Cumulative Hutch Cost Progression
 

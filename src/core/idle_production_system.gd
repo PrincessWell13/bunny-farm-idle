@@ -33,17 +33,20 @@ func get_tick_earnings() -> EarningsReport:
 
 ## Returns catch-up earnings after offline absence. Caller passes offline_seconds from
 ## TimeManager.get_offline_delta(); was_backgrounded from TimeManager.was_backgrounded().
+## Uses offline_mult from SeasonSystem (e.g. Winter +1.3×) rather than production_mult.
 func calculate_offline_earnings(offline_seconds: float, was_backgrounded: bool) -> EarningsReport:
 	var capped: float = min(offline_seconds, _max_offline_hours * 3600.0)
 	var multiplier: float = _multiplier_background if was_backgrounded else _get_offline_multiplier(capped)
-	return _calculate(capped, multiplier)
+	return _calculate(capped, multiplier, true)
 
 
 ## Pure function — no side effects, no EconomyManager calls.
-func _calculate(delta_seconds: float, offline_multiplier: float) -> EarningsReport:
+## use_offline_season: when true, reads offline_mult from SeasonSystem (for offline catch-up);
+## when false, reads production_mult (for online tick earnings).
+func _calculate(delta_seconds: float, offline_multiplier: float, use_offline_season: bool = false) -> EarningsReport:
 	var productive_count: int = _count_productive_rabbits()
 	var hutch_bonus: float = _get_hutch_bonus()
-	var season_mult: float = _get_season_multiplier()
+	var season_mult: float = _get_offline_season_multiplier() if use_offline_season else _get_season_multiplier()
 	var prestige_bonus: float = _get_prestige_bonus()
 	var prestige_growth: float = _get_prestige_growth_bonus()
 
@@ -99,14 +102,27 @@ func _get_hutch_bonus() -> float:
 	return 1.0
 
 
-## Returns 1.0 + harvest_bonus from SeasonSystem autoload when present; 1.0 when absent.
+## Returns the online production_mult from SeasonSystem (e.g. 1.5 in Autumn, 1.0 otherwise).
+## Reads season.multipliers.[season].production_mult via SeasonSystem.get_active_multipliers().
 func _get_season_multiplier() -> float:
 	var ss: Node = Engine.get_singleton("SeasonSystem") if Engine.has_singleton("SeasonSystem") \
 			else get_node_or_null("/root/SeasonSystem")
 	if ss == null:
 		return 1.0
-	var harvest_bonus: float = ss.get_harvest_bonus()
-	return 1.0 + harvest_bonus
+	var mults: Dictionary = ss.get_active_multipliers() as Dictionary
+	return mults.get("production_mult", 1.0) as float
+
+
+## Returns the offline_mult from SeasonSystem (e.g. 1.3 in Winter, 1.0 otherwise).
+## Reads season.multipliers.[season].offline_mult via SeasonSystem.get_active_multipliers().
+## Called only from _calculate() when use_offline_season = true (offline catch-up path).
+func _get_offline_season_multiplier() -> float:
+	var ss: Node = Engine.get_singleton("SeasonSystem") if Engine.has_singleton("SeasonSystem") \
+			else get_node_or_null("/root/SeasonSystem")
+	if ss == null:
+		return 1.0
+	var mults: Dictionary = ss.get_active_multipliers() as Dictionary
+	return mults.get("offline_mult", 1.0) as float
 
 
 ## Returns 1.0 + offline_production_bonus for the player's prestige level (from GameState).

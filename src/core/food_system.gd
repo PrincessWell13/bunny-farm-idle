@@ -4,10 +4,11 @@
 ## Offline catch-up via _resolve_offline_plots() deferred from _ready() (story-004).
 ##
 ## Public API:
-##   get_inventory() -> Dictionary         — snapshot copy of food_inventory
-##   get_farm_plot_state() -> Array         — snapshot copy of farm_plots
-##   feed_rabbit(rabbit_id, food_id) -> bool — deduct food, apply stat effect
-##   seed_plot(food_id) -> bool             — spend coins, start plot growth
+##   get_inventory() -> Dictionary              — snapshot copy of food_inventory
+##   get_farm_plot_state() -> Array             — snapshot copy of farm_plots
+##   feed_rabbit(rabbit_id, food_id) -> bool    — deduct food, apply stat effect
+##   seed_plot(food_id) -> bool                 — spend coins, start plot growth
+##   harvest_plot(plot_index) -> bool           — collect a completed plot (story-005)
 extends Node
 
 const KEY_FOOD_ID    := &"food_id"
@@ -84,6 +85,28 @@ func feed_rabbit(rabbit_id: String, food_id: String) -> bool:
 		GameState.mark_dirty()
 		push_warning("FoodSystem: RabbitSystem rejected feed for rabbit '%s' — rolled back" % rabbit_id)
 		return false
+	EventBus.food_used.emit(food_id)
+	return true
+
+
+## Harvests the farm plot at plot_index if it has finished growing.
+## Returns false if plot_index is out of bounds or the plot is not yet complete.
+## On success: removes the plot, grants harvest_quantity food,
+## emits food_harvested(food_id, quantity) and farm_plots_updated().
+func harvest_plot(plot_index: int) -> bool:
+	if plot_index < 0 or plot_index >= GameState.farm_plots.size():
+		return false
+	var plot: Dictionary = GameState.farm_plots[plot_index]
+	var now: float = Time.get_unix_time_from_system()
+	if now - float(plot[KEY_STARTED_AT]) < float(plot[KEY_DURATION]):
+		return false
+	var food_id: String = str(plot[KEY_FOOD_ID])
+	var harvest_qty: int = int(_food_defs.get(food_id, {}).get(&"harvest_quantity", 1))
+	GameState.farm_plots.remove_at(plot_index)
+	_add_to_inventory(food_id, harvest_qty)
+	GameState.mark_dirty()
+	EventBus.food_harvested.emit(food_id, harvest_qty)
+	EventBus.farm_plots_updated.emit()
 	return true
 
 
