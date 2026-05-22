@@ -40,19 +40,17 @@ class MockEconomyManager:
 var _system: FoodSystem
 var _mock_gs: MockGameState
 var _mock_em: MockEconomyManager
-var _owned_gs: bool = false
-var _owned_em: bool = false
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
 	_mock_em = MockEconomyManager.new()
-	_owned_gs = not Engine.has_singleton("GameState")
-	_owned_em = not Engine.has_singleton("EconomyManager")
-	if _owned_gs:
-		Engine.register_singleton("GameState", _mock_gs)
-	if _owned_em:
-		Engine.register_singleton("EconomyManager", _mock_em)
+	if Engine.has_singleton("GameState"):
+		Engine.unregister_singleton("GameState")
+	Engine.register_singleton("GameState", _mock_gs)
+	if Engine.has_singleton("EconomyManager"):
+		Engine.unregister_singleton("EconomyManager")
+	Engine.register_singleton("EconomyManager", _mock_em)
 	_system = FoodSystem.new()
 	_system._food_defs = TEST_FOOD_DEFS.duplicate(true)
 	_system._default_max_stack = TEST_MAX_STACK
@@ -61,9 +59,9 @@ func before_test() -> void:
 func after_test() -> void:
 	_system.free()
 	_system = null
-	if _owned_em:
+	if Engine.has_singleton("EconomyManager"):
 		Engine.unregister_singleton("EconomyManager")
-	if _owned_gs:
+	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
 
 

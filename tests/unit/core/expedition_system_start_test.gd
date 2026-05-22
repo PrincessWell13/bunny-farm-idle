@@ -120,9 +120,6 @@ var _system: Node
 var _mock_gs: MockGameState
 var _mock_rs: MockRabbitSystem
 var _mock_tm: MockTimeManager
-var _owned_gs: bool = false
-var _owned_rs: bool = false
-var _owned_tm: bool = false
 
 
 func before_test() -> void:
@@ -130,17 +127,17 @@ func before_test() -> void:
 	_mock_rs = MockRabbitSystem.new()
 	_mock_tm = MockTimeManager.new()
 
-	_owned_gs = not Engine.has_singleton("GameState")
-	if _owned_gs:
-		Engine.register_singleton("GameState", _mock_gs)
+	if Engine.has_singleton("GameState"):
+		Engine.unregister_singleton("GameState")
+	Engine.register_singleton("GameState", _mock_gs)
 
-	_owned_rs = not Engine.has_singleton("RabbitSystem")
-	if _owned_rs:
-		Engine.register_singleton("RabbitSystem", _mock_rs)
+	if Engine.has_singleton("RabbitSystem"):
+		Engine.unregister_singleton("RabbitSystem")
+	Engine.register_singleton("RabbitSystem", _mock_rs)
 
-	_owned_tm = not Engine.has_singleton("TimeManager")
-	if _owned_tm:
-		Engine.register_singleton("TimeManager", _mock_tm)
+	if Engine.has_singleton("TimeManager"):
+		Engine.unregister_singleton("TimeManager")
+	Engine.register_singleton("TimeManager", _mock_tm)
 
 	# Construct without calling _ready() to avoid balance.json I/O and tick connection.
 	_system = ExpeditionSystemScript.new()
@@ -158,11 +155,11 @@ func after_test() -> void:
 	_system.free()
 	_system = null
 
-	if _owned_tm:
+	if Engine.has_singleton("TimeManager"):
 		Engine.unregister_singleton("TimeManager")
-	if _owned_rs:
+	if Engine.has_singleton("RabbitSystem"):
 		Engine.unregister_singleton("RabbitSystem")
-	if _owned_gs:
+	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
 
 	_mock_tm = null

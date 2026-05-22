@@ -40,35 +40,32 @@ var _system: HabitatSystem
 var _mock_gs: MockGameState
 var _mock_rs: MockRabbitSystem
 var _mock_eb: MockEventBus
-var _owned_gs: bool = false
-var _owned_rs: bool = false
-var _owned_eb: bool = false
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
 	_mock_rs = MockRabbitSystem.new()
 	_mock_eb = MockEventBus.new()
-	_owned_gs = not Engine.has_singleton("GameState")
-	_owned_rs = not Engine.has_singleton("RabbitSystem")
-	_owned_eb = not Engine.has_singleton("EventBus")
-	if _owned_gs:
-		Engine.register_singleton("GameState", _mock_gs)
-	if _owned_rs:
-		Engine.register_singleton("RabbitSystem", _mock_rs)
-	if _owned_eb:
-		Engine.register_singleton("EventBus", _mock_eb)
+	if Engine.has_singleton("GameState"):
+		Engine.unregister_singleton("GameState")
+	Engine.register_singleton("GameState", _mock_gs)
+	if Engine.has_singleton("RabbitSystem"):
+		Engine.unregister_singleton("RabbitSystem")
+	Engine.register_singleton("RabbitSystem", _mock_rs)
+	if Engine.has_singleton("EventBus"):
+		Engine.unregister_singleton("EventBus")
+	Engine.register_singleton("EventBus", _mock_eb)
 	_system = HabitatSystem.new()
 
 
 func after_test() -> void:
 	_system.free()
 	_system = null
-	if _owned_gs:
+	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
-	if _owned_rs:
+	if Engine.has_singleton("RabbitSystem"):
 		Engine.unregister_singleton("RabbitSystem")
-	if _owned_eb:
+	if Engine.has_singleton("EventBus"):
 		Engine.unregister_singleton("EventBus")
 
 

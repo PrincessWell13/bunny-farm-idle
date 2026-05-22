@@ -21,14 +21,13 @@ class MockGameState:
 
 var _system: FoodSystem
 var _mock_gs: MockGameState
-var _owned_gs: bool = false
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
-	_owned_gs = not Engine.has_singleton("GameState")
-	if _owned_gs:
-		Engine.register_singleton("GameState", _mock_gs)
+	if Engine.has_singleton("GameState"):
+		Engine.unregister_singleton("GameState")
+	Engine.register_singleton("GameState", _mock_gs)
 	_system = FoodSystem.new()
 	_system._food_defs = TEST_FOOD_DEFS.duplicate(true)
 	_system._default_max_stack = TEST_MAX_STACK
@@ -37,7 +36,7 @@ func before_test() -> void:
 func after_test() -> void:
 	_system.free()
 	_system = null
-	if _owned_gs:
+	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
 
 
