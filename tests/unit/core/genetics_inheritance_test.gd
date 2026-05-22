@@ -45,7 +45,7 @@ func _make_rabbit(id: String = "", color_a: String = "white",
 func test_breed_returns_rabbit_with_genome_and_parentage() -> void:
 	var pa := _make_rabbit("rabbit_a")
 	var pb := _make_rabbit("rabbit_b")
-	var child := _system.breed(pa, pb)
+	var child: RabbitData = _system.breed(pa, pb)
 	assert_bool(child != null).is_true()
 	assert_bool(child.genome != null).is_true()
 	assert_str(child.parent_a_id).is_equal("rabbit_a")
