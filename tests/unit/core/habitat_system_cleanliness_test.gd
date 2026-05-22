@@ -154,7 +154,7 @@ func test_cleanliness_missing_balance_key_uses_safe_default() -> void:
 	# Arrange — a fresh system whose _ready() we call manually with a mock
 	# that has no balance.json at res:// path (unit test context).
 	# We verify that _decay_rate is still > 0 (the GDScript-side fallback).
-	var fresh_system := HabitatSystem.new()
+	var fresh_system: Node = HabitatSystem.new()
 	# balance.json is not available in headless unit tests; _load_balance_data()
 	# will push_error and return early, leaving the field at its default of 0.001.
 	fresh_system._load_balance_data()
