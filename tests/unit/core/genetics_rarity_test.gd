@@ -99,6 +99,6 @@ func test_genetics_random_allele_color_always_in_catalogue() -> void:
 	var pb := _make_rabbit("white")
 	pb.mutation_chance = 1.0
 	for _i: int in 50:
-		var child := _system.breed(pa, pb)
+		var child: RabbitData = _system.breed(pa, pb)
 		assert_bool(AlleleCatalogue.COLORS.has(child.genome.color.allele_a)).is_true()
 		assert_bool(AlleleCatalogue.COLORS.has(child.genome.color.allele_b)).is_true()

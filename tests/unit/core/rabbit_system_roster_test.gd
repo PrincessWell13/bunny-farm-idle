@@ -40,7 +40,7 @@ func after_test() -> void:
 ## AC-1: add_rabbit returns a non-empty string id.
 func test_add_rabbit_returns_non_empty_id() -> void:
 	var data := RabbitData.new()
-	var id := _system.add_rabbit(data)
+	var id: String = _system.add_rabbit(data)
 	assert_str(id).is_not_empty()
 
 
@@ -48,29 +48,29 @@ func test_add_rabbit_returns_non_empty_id() -> void:
 func test_add_rabbit_assigns_unique_ids() -> void:
 	var a := RabbitData.new()
 	var b := RabbitData.new()
-	var id_a := _system.add_rabbit(a)
-	var id_b := _system.add_rabbit(b)
+	var id_a: String = _system.add_rabbit(a)
+	var id_b: String = _system.add_rabbit(b)
 	assert_str(id_a).is_not_equal(id_b)
 
 
 ## AC-2: get_rabbit returns the same instance that was added.
 func test_get_rabbit_returns_correct_instance() -> void:
 	var data := RabbitData.new()
-	var id := _system.add_rabbit(data)
-	var found := _system.get_rabbit(id)
+	var id: String = _system.add_rabbit(data)
+	var found: RabbitData = _system.get_rabbit(id)
 	assert_bool(found == data).is_true()
 
 
 ## AC-3: get_rabbit returns null for an unknown id.
 func test_get_rabbit_returns_null_for_unknown_id() -> void:
-	var result := _system.get_rabbit("does-not-exist")
+	var result: RabbitData = _system.get_rabbit("does-not-exist")
 	assert_bool(result == null).is_true()
 
 
 ## AC-4: remove_rabbit makes the rabbit unfindable and causes no crash.
 func test_remove_rabbit_makes_rabbit_unfindable() -> void:
 	var data := RabbitData.new()
-	var id := _system.add_rabbit(data)
+	var id: String = _system.add_rabbit(data)
 	_system.remove_rabbit(id)
 	assert_bool(_system.get_rabbit(id) == null).is_true()
 
@@ -83,7 +83,7 @@ func test_get_rabbits_in_hutch_filters_correctly() -> void:
 	b.hutch_id = "hutch-2"
 	_system.add_rabbit(a)
 	_system.add_rabbit(b)
-	var result := _system.get_rabbits_in_hutch("hutch-1")
+	var result: Array = _system.get_rabbits_in_hutch("hutch-1")
 	assert_int(result.size()).is_equal(1)
 	assert_bool(result[0] == a).is_true()
 

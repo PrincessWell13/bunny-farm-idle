@@ -59,7 +59,7 @@ func test_breed_allele_a_sourced_from_parent_a() -> void:
 	var parent_a_alleles: Array[String] = ["white", "brown"]
 	for seed_val in 100:
 		_rng.seed = seed_val
-		var child := _system.breed(pa, pb)
+		var child: RabbitData = _system.breed(pa, pb)
 		assert_bool(parent_a_alleles.has(child.genome.color.allele_a)).is_true()
 
 
@@ -70,7 +70,7 @@ func test_breed_allele_b_sourced_from_parent_b() -> void:
 	var parent_b_alleles: Array[String] = ["grey", "spotted"]
 	for seed_val in 100:
 		_rng.seed = seed_val
-		var child := _system.breed(pa, pb)
+		var child: RabbitData = _system.breed(pa, pb)
 		assert_bool(parent_b_alleles.has(child.genome.color.allele_b)).is_true()
 
 
@@ -94,7 +94,7 @@ func test_breed_no_mutation_at_zero_chance() -> void:
 	var valid: Array[String] = ["white", "brown", "grey", "spotted"]
 	for seed_val in 100:
 		_rng.seed = seed_val
-		var child := _system.breed(pa, pb)
+		var child: RabbitData = _system.breed(pa, pb)
 		assert_bool(valid.has(child.genome.color.allele_a)).is_true()
 		assert_bool(valid.has(child.genome.color.allele_b)).is_true()
 
@@ -107,7 +107,7 @@ func test_breed_full_mutation_replaces_alleles() -> void:
 	var any_mutated := false
 	for seed_val in 20:
 		_rng.seed = seed_val
-		var child := _system.breed(pa, pb)
+		var child: RabbitData = _system.breed(pa, pb)
 		if child.genome.color.allele_a != "white" or child.genome.color.allele_b != "white":
 			any_mutated = true
 			break
@@ -119,12 +119,12 @@ func test_breed_deterministic_with_fixed_seed() -> void:
 	var pa := _make_rabbit("a", "white", "brown", 0.1)
 	var pb := _make_rabbit("b", "grey", "spotted", 0.1)
 	_rng.seed = 12345
-	var first := _system.breed(pa, pb)
-	var color_a_0 := first.genome.color.allele_a
-	var color_b_0 := first.genome.color.allele_b
+	var first: RabbitData = _system.breed(pa, pb)
+	var color_a_0: String = first.genome.color.allele_a
+	var color_b_0: String = first.genome.color.allele_b
 	for _i in 99:
 		_rng.seed = 12345
-		var child := _system.breed(pa, pb)
+		var child: RabbitData = _system.breed(pa, pb)
 		assert_str(child.genome.color.allele_a).is_equal(color_a_0)
 		assert_str(child.genome.color.allele_b).is_equal(color_b_0)
 
@@ -143,7 +143,7 @@ func test_breed_fuzz_all_alleles_valid_catalogue_entries() -> void:
 	valid_traits.append_array(AlleleCatalogue.TRAITS_TIER3)
 	valid_traits.append(AlleleCatalogue.TRAIT_NONE)
 	for _i in 1000:
-		var child := _system.breed(pa, pb)
+		var child: RabbitData = _system.breed(pa, pb)
 		assert_bool(valid_colors.has(child.genome.color.allele_a)).is_true()
 		assert_bool(valid_colors.has(child.genome.color.allele_b)).is_true()
 		assert_bool(AlleleCatalogue.SIZES.has(child.genome.size.allele_a)).is_true()

@@ -45,7 +45,7 @@ func _sum_dict(d: Dictionary) -> float:
 func test_get_breed_preview_returns_breed_preview() -> void:
 	var pa := _make_rabbit()
 	var pb := _make_rabbit("grey", "spotted")
-	var preview := _system.get_breed_preview(pa, pb)
+	var preview: BreedPreview = _system.get_breed_preview(pa, pb)
 	assert_bool(preview != null).is_true()
 	assert_bool(preview is BreedPreview).is_true()
 
@@ -55,8 +55,8 @@ func test_get_breed_preview_returns_breed_preview() -> void:
 func test_get_breed_preview_is_pure_same_result_every_call() -> void:
 	var pa := _make_rabbit("gold", "silver", "fast_eater", "lucky", 0.1)
 	var pb := _make_rabbit("white", "grey", "curious", "calm", 0.1)
-	var p1 := _system.get_breed_preview(pa, pb)
-	var p2 := _system.get_breed_preview(pa, pb)
+	var p1: BreedPreview = _system.get_breed_preview(pa, pb)
+	var p2: BreedPreview = _system.get_breed_preview(pa, pb)
 	for key: String in p1.color_probabilities:
 		assert_float(p1.color_probabilities[key]).is_equal_approx(
 			p2.color_probabilities[key], EPSILON)
@@ -66,7 +66,7 @@ func test_get_breed_preview_is_pure_same_result_every_call() -> void:
 func test_color_probabilities_sum_to_one() -> void:
 	var pa := _make_rabbit("white", "brown", "fast_eater", "calm", 0.05)
 	var pb := _make_rabbit("grey", "spotted", "curious", "lucky", 0.05)
-	var preview := _system.get_breed_preview(pa, pb)
+	var preview: BreedPreview = _system.get_breed_preview(pa, pb)
 	assert_float(_sum_dict(preview.color_probabilities)).is_equal_approx(1.0, EPSILON)
 
 
@@ -74,7 +74,7 @@ func test_color_probabilities_sum_to_one() -> void:
 func test_trait_a_probabilities_sum_to_one() -> void:
 	var pa := _make_rabbit()
 	var pb := _make_rabbit("grey", "spotted", "speed_grower", "high_fertility", 0.05)
-	var preview := _system.get_breed_preview(pa, pb)
+	var preview: BreedPreview = _system.get_breed_preview(pa, pb)
 	assert_float(_sum_dict(preview.trait_a_probabilities)).is_equal_approx(1.0, EPSILON)
 
 
@@ -82,7 +82,7 @@ func test_trait_a_probabilities_sum_to_one() -> void:
 func test_trait_b_probabilities_sum_to_one() -> void:
 	var pa := _make_rabbit()
 	var pb := _make_rabbit()
-	var preview := _system.get_breed_preview(pa, pb)
+	var preview: BreedPreview = _system.get_breed_preview(pa, pb)
 	assert_float(_sum_dict(preview.trait_b_probabilities)).is_equal_approx(1.0, EPSILON)
 
 
@@ -90,7 +90,7 @@ func test_trait_b_probabilities_sum_to_one() -> void:
 func test_zero_mutation_only_parent_alleles_in_probabilities() -> void:
 	var pa := _make_rabbit("white", "brown", "fast_eater", "calm", 0.0)
 	var pb := _make_rabbit("white", "brown", "fast_eater", "calm", 0.0)
-	var preview := _system.get_breed_preview(pa, pb)
+	var preview: BreedPreview = _system.get_breed_preview(pa, pb)
 	for key: String in preview.color_probabilities:
 		# With no mutation, only parent alleles should have non-zero probability
 		if preview.color_probabilities[key] > EPSILON:
@@ -101,7 +101,7 @@ func test_zero_mutation_only_parent_alleles_in_probabilities() -> void:
 func test_mutation_chance_is_average_of_parents() -> void:
 	var pa := _make_rabbit("white", "brown", "fast_eater", "calm", 0.1)
 	var pb := _make_rabbit("grey", "spotted", "curious", "lucky", 0.3)
-	var preview := _system.get_breed_preview(pa, pb)
+	var preview: BreedPreview = _system.get_breed_preview(pa, pb)
 	assert_float(preview.mutation_chance).is_equal_approx(0.2, EPSILON)
 
 
