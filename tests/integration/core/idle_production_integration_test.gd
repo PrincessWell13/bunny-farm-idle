@@ -3,11 +3,13 @@
 ## SeasonSystem is tested via Engine.has_singleton absence (graceful degradation only).
 extends GdUnitTestSuite
 
-var _system: IdleProductionSystem
+const IdleProductionSystemScript := preload("res://src/core/idle_production_system.gd")
+
+var _system: Node
 
 
 func before_test() -> void:
-	_system = IdleProductionSystem.new()
+	_system = IdleProductionSystemScript.new()
 	_system._base_rate = 0.05
 	_system._prestige_offline_bonuses = {}
 	_system._rabbit_override = _make_rabbits(10, RabbitData.RabbitStage.ADULT)

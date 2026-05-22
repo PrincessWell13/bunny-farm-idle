@@ -3,13 +3,14 @@
 ## Key invariant: no RNG calls; probabilities sum to 1.0; parents never modified.
 extends GdUnitTestSuite
 
+const GeneticsSystemScript := preload("res://src/core/genetics_system.gd")
 const EPSILON: float = 0.0001
 
-var _system: GeneticsSystem
+var _system: Node
 
 
 func before_test() -> void:
-	_system = GeneticsSystem.new()
+	_system = GeneticsSystemScript.new()
 
 
 func after_test() -> void:

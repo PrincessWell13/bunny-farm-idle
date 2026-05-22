@@ -16,46 +16,49 @@ class MockEventBus:
 	signal rabbit_matured(rabbit_id: String, new_stage: int)
 
 
-var _system: RabbitSystem
+const RabbitSystemScript := preload("res://src/core/rabbit_system.gd")
+
+var _system: Node
 var _mock_gs: MockGameState
 var _mock_eb: MockEventBus
 var _died_calls: Array[String] = []
 var _get_rabbit_in_handler_result: Variant = "not_called"
-var _owned_gs: bool = false
-var _owned_eb: bool = false
+var _orig_gs: Object = null
+var _orig_eb: Object = null
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
 	_mock_eb = MockEventBus.new()
-	_owned_gs = false
-	_owned_eb = false
-	if not Engine.has_singleton("GameState"):
-		Engine.register_singleton("GameState", _mock_gs)
-		_owned_gs = true
-	if not Engine.has_singleton("EventBus"):
-		Engine.register_singleton("EventBus", _mock_eb)
-		_owned_eb = true
-	var active_eb: Object = Engine.get_singleton("EventBus")
-	if active_eb != null:
-		active_eb.connect("rabbit_died", _on_died)
-	_system = RabbitSystem.new()
+	_orig_gs = Engine.get_singleton("GameState") if Engine.has_singleton("GameState") else null
+	_orig_eb = Engine.get_singleton("EventBus") if Engine.has_singleton("EventBus") else null
+	if Engine.has_singleton("GameState"):
+		Engine.unregister_singleton("GameState")
+	Engine.register_singleton("GameState", _mock_gs)
+	if Engine.has_singleton("EventBus"):
+		Engine.unregister_singleton("EventBus")
+	Engine.register_singleton("EventBus", _mock_eb)
+	_mock_eb.connect("rabbit_died", _on_died)
+	_system = RabbitSystemScript.new()
 	_died_calls.clear()
 	_get_rabbit_in_handler_result = "not_called"
 
 
 func after_test() -> void:
-	var active_eb: Object = Engine.get_singleton("EventBus")
-	if active_eb != null and active_eb.is_connected("rabbit_died", _on_died):
-		active_eb.disconnect("rabbit_died", _on_died)
+	if _mock_eb != null and _mock_eb.is_connected("rabbit_died", _on_died):
+		_mock_eb.disconnect("rabbit_died", _on_died)
 	_system.free()
 	_system = null
-	if _owned_gs:
-		Engine.unregister_singleton("GameState")
-	elif Engine.has_singleton("GameState"):
-		Engine.get_singleton("GameState").rabbits.clear()
-	if _owned_eb:
+	if Engine.has_singleton("EventBus"):
 		Engine.unregister_singleton("EventBus")
+	if _orig_eb != null:
+		Engine.register_singleton("EventBus", _orig_eb)
+	_orig_eb = null
+	if Engine.has_singleton("GameState"):
+		Engine.unregister_singleton("GameState")
+	if _orig_gs != null:
+		Engine.register_singleton("GameState", _orig_gs)
+	_orig_gs = null
 
 
 func _on_died(rabbit_id: String) -> void:

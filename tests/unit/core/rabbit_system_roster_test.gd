@@ -3,6 +3,8 @@
 ## GameState is mocked via Engine.register_singleton — no autoload required.
 extends GdUnitTestSuite
 
+const RabbitSystemScript := preload("res://src/core/rabbit_system.gd")
+
 
 class MockGameState:
 	var rabbits: Array[RabbitData] = []
@@ -11,27 +13,28 @@ class MockGameState:
 		dirty = true
 
 
-var _system: RabbitSystem
+var _system: Node
 var _mock_gs: MockGameState
-var _owned_gs: bool = false
+var _orig_gs: Object = null
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
-	_owned_gs = false
-	if not Engine.has_singleton("GameState"):
-		Engine.register_singleton("GameState", _mock_gs)
-		_owned_gs = true
-	_system = RabbitSystem.new()
+	_orig_gs = Engine.get_singleton("GameState") if Engine.has_singleton("GameState") else null
+	if Engine.has_singleton("GameState"):
+		Engine.unregister_singleton("GameState")
+	Engine.register_singleton("GameState", _mock_gs)
+	_system = RabbitSystemScript.new()
 
 
 func after_test() -> void:
 	_system.free()
 	_system = null
-	if _owned_gs:
+	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
-	elif Engine.has_singleton("GameState"):
-		Engine.get_singleton("GameState").rabbits.clear()
+	if _orig_gs != null:
+		Engine.register_singleton("GameState", _orig_gs)
+	_orig_gs = null
 
 
 ## AC-1: add_rabbit returns a non-empty string id.

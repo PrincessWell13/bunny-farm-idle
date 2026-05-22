@@ -3,13 +3,14 @@
 ## Resolution order: cancellation → synergy → hidden combo. Parents never modified.
 extends GdUnitTestSuite
 
+const GeneticsSystemScript := preload("res://src/core/genetics_system.gd")
 const EPSILON: float = 0.0001
 
-var _system: GeneticsSystem
+var _system: Node
 
 
 func before_test() -> void:
-	_system = GeneticsSystem.new()
+	_system = GeneticsSystemScript.new()
 	# Use known defaults so tests are independent of balance.json on disk.
 	_system._trait_synergies = [
 		{"traits": ["fast_eater", "efficient_eater"], "bonus": {"growth_rate_bonus": 0.3}},

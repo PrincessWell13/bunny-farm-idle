@@ -120,12 +120,19 @@ var _system: Node
 var _mock_gs: MockGameState
 var _mock_rs: MockRabbitSystem
 var _mock_tm: MockTimeManager
+var _orig_gs: Object = null
+var _orig_rs: Object = null
+var _orig_tm: Object = null
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
 	_mock_rs = MockRabbitSystem.new()
 	_mock_tm = MockTimeManager.new()
+
+	_orig_gs = Engine.get_singleton("GameState") if Engine.has_singleton("GameState") else null
+	_orig_rs = Engine.get_singleton("RabbitSystem") if Engine.has_singleton("RabbitSystem") else null
+	_orig_tm = Engine.get_singleton("TimeManager") if Engine.has_singleton("TimeManager") else null
 
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
@@ -157,10 +164,19 @@ func after_test() -> void:
 
 	if Engine.has_singleton("TimeManager"):
 		Engine.unregister_singleton("TimeManager")
+	if _orig_tm != null:
+		Engine.register_singleton("TimeManager", _orig_tm)
+	_orig_tm = null
 	if Engine.has_singleton("RabbitSystem"):
 		Engine.unregister_singleton("RabbitSystem")
+	if _orig_rs != null:
+		Engine.register_singleton("RabbitSystem", _orig_rs)
+	_orig_rs = null
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
+	if _orig_gs != null:
+		Engine.register_singleton("GameState", _orig_gs)
+	_orig_gs = null
 
 	_mock_tm = null
 	_mock_rs = null

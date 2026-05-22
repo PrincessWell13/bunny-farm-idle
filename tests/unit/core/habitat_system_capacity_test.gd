@@ -3,6 +3,8 @@
 ## GameState is mocked via Engine.register_singleton. _capacity_table injected directly.
 extends GdUnitTestSuite
 
+const HabitatSystemScript := preload("res://src/core/habitat_system.gd")
+
 ## Reference capacity table matching balance.json: index 0 = level 1 ... index 5 = level 6.
 const TEST_CAPACITY_TABLE: Array = [4, 8, 12, 16, 20, 24]
 const FALLBACK_CAPACITY_TABLE: Array = [4]
@@ -14,16 +16,18 @@ class MockGameState:
 		pass
 
 
-var _system: HabitatSystem
+var _system: Node
 var _mock_gs: MockGameState
+var _orig_gs: Object = null
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
+	_orig_gs = Engine.get_singleton("GameState") if Engine.has_singleton("GameState") else null
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
 	Engine.register_singleton("GameState", _mock_gs)
-	_system = HabitatSystem.new()
+	_system = HabitatSystemScript.new()
 	_system._capacity_table = TEST_CAPACITY_TABLE.duplicate()
 
 
@@ -32,6 +36,9 @@ func after_test() -> void:
 	_system = null
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
+	if _orig_gs != null:
+		Engine.register_singleton("GameState", _orig_gs)
+	_orig_gs = null
 
 
 func _make_hutch(id: String, level: int) -> HutchData:

@@ -2,11 +2,13 @@
 ## Pure function tests — no I/O, no autoloads, no scene tree required.
 extends GdUnitTestSuite
 
-var _system: SaveSystem
+const SaveSystemScript := preload("res://src/core/save_system.gd")
+
+var _system: Node
 
 
 func before_test() -> void:
-	_system = SaveSystem.new()
+	_system = SaveSystemScript.new()
 
 
 func after_test() -> void:

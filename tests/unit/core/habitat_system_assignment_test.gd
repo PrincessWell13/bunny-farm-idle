@@ -3,6 +3,8 @@
 ## GameState, RabbitSystem, and EventBus are mocked via Engine.register_singleton.
 extends GdUnitTestSuite
 
+const HabitatSystemScript := preload("res://src/core/habitat_system.gd")
+
 
 class MockGameState:
 	var hutches: Array = []
@@ -36,16 +38,22 @@ class MockEventBus:
 		emit_count += 1
 
 
-var _system: HabitatSystem
+var _system: Node
 var _mock_gs: MockGameState
 var _mock_rs: MockRabbitSystem
 var _mock_eb: MockEventBus
+var _orig_gs: Object = null
+var _orig_rs: Object = null
+var _orig_eb: Object = null
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
 	_mock_rs = MockRabbitSystem.new()
 	_mock_eb = MockEventBus.new()
+	_orig_gs = Engine.get_singleton("GameState") if Engine.has_singleton("GameState") else null
+	_orig_rs = Engine.get_singleton("RabbitSystem") if Engine.has_singleton("RabbitSystem") else null
+	_orig_eb = Engine.get_singleton("EventBus") if Engine.has_singleton("EventBus") else null
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
 	Engine.register_singleton("GameState", _mock_gs)
@@ -55,18 +63,27 @@ func before_test() -> void:
 	if Engine.has_singleton("EventBus"):
 		Engine.unregister_singleton("EventBus")
 	Engine.register_singleton("EventBus", _mock_eb)
-	_system = HabitatSystem.new()
+	_system = HabitatSystemScript.new()
 
 
 func after_test() -> void:
 	_system.free()
 	_system = null
-	if Engine.has_singleton("GameState"):
-		Engine.unregister_singleton("GameState")
-	if Engine.has_singleton("RabbitSystem"):
-		Engine.unregister_singleton("RabbitSystem")
 	if Engine.has_singleton("EventBus"):
 		Engine.unregister_singleton("EventBus")
+	if _orig_eb != null:
+		Engine.register_singleton("EventBus", _orig_eb)
+	_orig_eb = null
+	if Engine.has_singleton("RabbitSystem"):
+		Engine.unregister_singleton("RabbitSystem")
+	if _orig_rs != null:
+		Engine.register_singleton("RabbitSystem", _orig_rs)
+	_orig_rs = null
+	if Engine.has_singleton("GameState"):
+		Engine.unregister_singleton("GameState")
+	if _orig_gs != null:
+		Engine.register_singleton("GameState", _orig_gs)
+	_orig_gs = null
 
 
 ## Helpers

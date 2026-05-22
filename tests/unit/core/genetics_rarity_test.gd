@@ -2,11 +2,13 @@
 ## Covers: get_rarity(), _color_to_rarity_tier(), _random_color_by_rarity(), balance.json loading.
 extends GdUnitTestSuite
 
-var _system: GeneticsSystem
+const GeneticsSystemScript := preload("res://src/core/genetics_system.gd")
+
+var _system: Node
 
 
 func before_test() -> void:
-	_system = GeneticsSystem.new()
+	_system = GeneticsSystemScript.new()
 
 
 func after_test() -> void:

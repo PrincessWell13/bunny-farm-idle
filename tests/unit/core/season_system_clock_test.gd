@@ -3,6 +3,8 @@
 ## Story: production/epics/season-system/story-001-season-clock.md
 extends GdUnitTestSuite
 
+const SeasonSystemScript := preload("res://src/core/season_system.gd")
+
 const EPSILON: float = 0.001
 
 ## Test multipliers matching the GDD: Spring fertility, Summer growth, Autumn harvest, Winter offline.
@@ -25,16 +27,18 @@ class MockEventBus:
 		season_changed_count += 1
 
 
-var _system: SeasonSystem
+var _system: Node
 var _mock_eb: MockEventBus
+var _orig_eb: Object = null
 
 
 func before_test() -> void:
 	_mock_eb = MockEventBus.new()
+	_orig_eb = Engine.get_singleton("EventBus") if Engine.has_singleton("EventBus") else null
 	if Engine.has_singleton("EventBus"):
 		Engine.unregister_singleton("EventBus")
 	Engine.register_singleton("EventBus", _mock_eb)
-	_system = SeasonSystem.new()
+	_system = SeasonSystemScript.new()
 	# Inject fast test values — bypasses balance.json I/O
 	_system._seconds_per_day = 10.0
 	_system._days_per_season = 3
@@ -46,6 +50,9 @@ func after_test() -> void:
 	_system = null
 	if Engine.has_singleton("EventBus"):
 		Engine.unregister_singleton("EventBus")
+	if _orig_eb != null:
+		Engine.register_singleton("EventBus", _orig_eb)
+	_orig_eb = null
 
 
 ## AC-1: get_current_season() returns SPRING (0) initially.

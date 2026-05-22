@@ -2,11 +2,13 @@
 ## Uses _rabbit_override injection to avoid RabbitSystem autoload dependency.
 extends GdUnitTestSuite
 
-var _system: IdleProductionSystem
+const IdleProductionSystemScript := preload("res://src/core/idle_production_system.gd")
+
+var _system: Node
 
 
 func before_test() -> void:
-	_system = IdleProductionSystem.new()
+	_system = IdleProductionSystemScript.new()
 	_system._base_rate = 0.05
 	_system._multiplier_background = 0.75
 	_system._multiplier_under_4h = 0.60

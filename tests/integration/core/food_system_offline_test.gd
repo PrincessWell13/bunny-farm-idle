@@ -5,6 +5,8 @@
 ## GameState mocked via Engine.register_singleton; _food_defs injected directly.
 extends GdUnitTestSuite
 
+const FoodSystemScript := preload("res://src/core/food_system.gd")
+
 const TEST_FOOD_DEFS: Dictionary = {
 	"grass":  { "seed_cost": 5,  "grow_time_seconds": 60.0,  "harvest_quantity": 3, "max_stack": 99 },
 	"carrot": { "seed_cost": 15, "grow_time_seconds": 300.0, "harvest_quantity": 2, "max_stack": 99 },
@@ -23,16 +25,18 @@ class MockGameState:
 		dirty_call_count = 0
 
 
-var _system: FoodSystem
+var _system: Node
 var _mock_gs: MockGameState
+var _orig_gs: Object = null
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
+	_orig_gs = Engine.get_singleton("GameState") if Engine.has_singleton("GameState") else null
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
 	Engine.register_singleton("GameState", _mock_gs)
-	_system = FoodSystem.new()
+	_system = FoodSystemScript.new()
 	_system._food_defs = TEST_FOOD_DEFS.duplicate(true)
 
 
@@ -41,6 +45,9 @@ func after_test() -> void:
 	_system = null
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
+	if _orig_gs != null:
+		Engine.register_singleton("GameState", _orig_gs)
+	_orig_gs = null
 
 
 ## AC-1: completed plot is removed, inventory updated, food_harvested emitted.

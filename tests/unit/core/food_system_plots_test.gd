@@ -4,6 +4,8 @@
 ## Time is simulated by injecting a past started_at into plot dicts directly.
 extends GdUnitTestSuite
 
+const FoodSystemScript := preload("res://src/core/food_system.gd")
+
 ## Food defs: seed_cost, grow_time_seconds, harvest_quantity, max_stack.
 const TEST_FOOD_DEFS: Dictionary = {
 	"grass":  { "seed_cost": 5,  "grow_time_seconds": 60.0,  "harvest_quantity": 3, "max_stack": 99 },
@@ -37,21 +39,25 @@ class MockEconomyManager:
 		return spend_return_value
 
 
-var _system: FoodSystem
+var _system: Node
 var _mock_gs: MockGameState
 var _mock_em: MockEconomyManager
+var _orig_gs: Object = null
+var _orig_em: Object = null
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
 	_mock_em = MockEconomyManager.new()
+	_orig_gs = Engine.get_singleton("GameState") if Engine.has_singleton("GameState") else null
+	_orig_em = Engine.get_singleton("EconomyManager") if Engine.has_singleton("EconomyManager") else null
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
 	Engine.register_singleton("GameState", _mock_gs)
 	if Engine.has_singleton("EconomyManager"):
 		Engine.unregister_singleton("EconomyManager")
 	Engine.register_singleton("EconomyManager", _mock_em)
-	_system = FoodSystem.new()
+	_system = FoodSystemScript.new()
 	_system._food_defs = TEST_FOOD_DEFS.duplicate(true)
 	_system._default_max_stack = TEST_MAX_STACK
 
@@ -61,8 +67,14 @@ func after_test() -> void:
 	_system = null
 	if Engine.has_singleton("EconomyManager"):
 		Engine.unregister_singleton("EconomyManager")
+	if _orig_em != null:
+		Engine.register_singleton("EconomyManager", _orig_em)
+	_orig_em = null
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
+	if _orig_gs != null:
+		Engine.register_singleton("GameState", _orig_gs)
+	_orig_gs = null
 
 
 ## AC-1: seed_plot calls EconomyManager.spend with correct coin cost.

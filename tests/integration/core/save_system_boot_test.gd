@@ -2,19 +2,22 @@
 ## Tests load_game() / save_game() with injected GameState, TimeManager, and MockFirebaseAdapter.
 extends GdUnitTestSuite
 
+const SaveSystemScript := preload("res://src/core/save_system.gd")
+const GameStateScript := preload("res://src/core/game_state.gd")
+const TimeManagerScript := preload("res://src/core/time_manager.gd")
 const TEMP_PATH: String = "user://test_save_system_005_temp.json"
 
-var _system: SaveSystem
-var _game_state: GameState
-var _time_manager: TimeManager
+var _system: Node
+var _game_state: Node
+var _time_manager: Node
 var _adapter: MockFirebaseAdapter
 
 
 func before_test() -> void:
-	_game_state = GameState.new()
-	_time_manager = TimeManager.new()
+	_game_state = GameStateScript.new()
+	_time_manager = TimeManagerScript.new()
 	_adapter = MockFirebaseAdapter.new()
-	_system = SaveSystem.new()
+	_system = SaveSystemScript.new()
 	_system._game_state = _game_state
 	_system._time_manager = _time_manager
 	_system._save_path = TEMP_PATH

@@ -4,6 +4,8 @@
 ## _decay_rate is injected directly after instantiation to avoid balance.json I/O.
 extends GdUnitTestSuite
 
+const HabitatSystemScript := preload("res://src/core/habitat_system.gd")
+
 const EPSILON: float = 0.0001
 
 
@@ -23,21 +25,25 @@ class MockEventBus:
 		cleanliness_calls.append({ "hutch_id": id, "cleanliness": val })
 
 
-var _system: HabitatSystem
+var _system: Node
 var _mock_gs: MockGameState
 var _mock_eb: MockEventBus
+var _orig_gs: Object = null
+var _orig_eb: Object = null
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
 	_mock_eb = MockEventBus.new()
+	_orig_gs = Engine.get_singleton("GameState") if Engine.has_singleton("GameState") else null
+	_orig_eb = Engine.get_singleton("EventBus") if Engine.has_singleton("EventBus") else null
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
 	Engine.register_singleton("GameState", _mock_gs)
 	if Engine.has_singleton("EventBus"):
 		Engine.unregister_singleton("EventBus")
 	Engine.register_singleton("EventBus", _mock_eb)
-	_system = HabitatSystem.new()
+	_system = HabitatSystemScript.new()
 	# Override decay rate for deterministic tests — bypasses balance.json
 	_system._decay_rate = 0.1
 
@@ -45,10 +51,16 @@ func before_test() -> void:
 func after_test() -> void:
 	_system.free()
 	_system = null
-	if Engine.has_singleton("GameState"):
-		Engine.unregister_singleton("GameState")
 	if Engine.has_singleton("EventBus"):
 		Engine.unregister_singleton("EventBus")
+	if _orig_eb != null:
+		Engine.register_singleton("EventBus", _orig_eb)
+	_orig_eb = null
+	if Engine.has_singleton("GameState"):
+		Engine.unregister_singleton("GameState")
+	if _orig_gs != null:
+		Engine.register_singleton("GameState", _orig_gs)
+	_orig_gs = null
 
 
 func _make_empty_hutch(id: String, cleanliness: float) -> HutchData:
@@ -152,7 +164,7 @@ func test_cleanliness_missing_balance_key_uses_safe_default() -> void:
 	# Arrange — a fresh system whose _ready() we call manually with a mock
 	# that has no balance.json at res:// path (unit test context).
 	# We verify that _decay_rate is still > 0 (the GDScript-side fallback).
-	var fresh_system: Node = HabitatSystem.new()
+	var fresh_system: Node = HabitatSystemScript.new()
 	# balance.json is not available in headless unit tests; _load_balance_data()
 	# will push_error and return early, leaving the field at its default of 0.001.
 	fresh_system._load_balance_data()

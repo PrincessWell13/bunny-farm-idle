@@ -2,13 +2,14 @@
 ## Uses a redirected _save_path (temp file) for deterministic test isolation.
 extends GdUnitTestSuite
 
+const SaveSystemScript := preload("res://src/core/save_system.gd")
 const TEMP_PATH: String = "user://test_save_system_002_temp.json"
 
-var _system: SaveSystem
+var _system: Node
 
 
 func before_test() -> void:
-	_system = SaveSystem.new()
+	_system = SaveSystemScript.new()
 	_system._save_path = TEMP_PATH
 	_cleanup_temp_file()
 

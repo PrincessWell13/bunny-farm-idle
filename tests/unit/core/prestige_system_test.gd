@@ -35,11 +35,16 @@ class MockRabbitSystem:
 var _system: Node
 var _mock_gs: MockGameState
 var _mock_rs: MockRabbitSystem
+var _orig_gs: Object = null
+var _orig_rs: Object = null
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
 	_mock_rs = MockRabbitSystem.new()
+
+	_orig_gs = Engine.get_singleton("GameState") if Engine.has_singleton("GameState") else null
+	_orig_rs = Engine.get_singleton("RabbitSystem") if Engine.has_singleton("RabbitSystem") else null
 
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
@@ -60,8 +65,14 @@ func after_test() -> void:
 
 	if Engine.has_singleton("RabbitSystem"):
 		Engine.unregister_singleton("RabbitSystem")
+	if _orig_rs != null:
+		Engine.register_singleton("RabbitSystem", _orig_rs)
+	_orig_rs = null
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
+	if _orig_gs != null:
+		Engine.register_singleton("GameState", _orig_gs)
+	_orig_gs = null
 
 	_mock_rs = null
 	_mock_gs = null

@@ -3,6 +3,8 @@
 ## GameState is mocked via Engine.register_singleton. Thresholds are injected directly.
 extends GdUnitTestSuite
 
+const HabitatSystemScript := preload("res://src/core/habitat_system.gd")
+
 const EPSILON: float = 0.0001
 
 ## Reference thresholds matching balance.json defaults — injected into _system directly.
@@ -23,16 +25,18 @@ class MockGameState:
 		pass
 
 
-var _system: HabitatSystem
+var _system: Node
 var _mock_gs: MockGameState
+var _orig_gs: Object = null
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
+	_orig_gs = Engine.get_singleton("GameState") if Engine.has_singleton("GameState") else null
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
 	Engine.register_singleton("GameState", _mock_gs)
-	_system = HabitatSystem.new()
+	_system = HabitatSystemScript.new()
 	_system._cleanliness_thresholds = TEST_THRESHOLDS.duplicate(true)
 
 
@@ -41,6 +45,9 @@ func after_test() -> void:
 	_system = null
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
+	if _orig_gs != null:
+		Engine.register_singleton("GameState", _orig_gs)
+	_orig_gs = null
 
 
 func _make_hutch(id: String, cleanliness: float) -> HutchData:

@@ -2,15 +2,19 @@
 ## Injects GameState and TimeManager instances directly for isolation (no autoload dependency).
 extends GdUnitTestSuite
 
-var _system: SaveSystem
-var _game_state: GameState
-var _time_manager: TimeManager
+const SaveSystemScript := preload("res://src/core/save_system.gd")
+const GameStateScript := preload("res://src/core/game_state.gd")
+const TimeManagerScript := preload("res://src/core/time_manager.gd")
+
+var _system: Node
+var _game_state: Node
+var _time_manager: Node
 
 
 func before_test() -> void:
-	_game_state = GameState.new()
-	_time_manager = TimeManager.new()
-	_system = SaveSystem.new()
+	_game_state = GameStateScript.new()
+	_time_manager = TimeManagerScript.new()
+	_system = SaveSystemScript.new()
 	_system._game_state = _game_state
 	_system._time_manager = _time_manager
 

@@ -3,12 +3,14 @@
 ## Key invariant: breed() never modifies parents; RNG is injectable for determinism.
 extends GdUnitTestSuite
 
-var _system: GeneticsSystem
+const GeneticsSystemScript := preload("res://src/core/genetics_system.gd")
+
+var _system: Node
 var _rng: RandomNumberGenerator
 
 
 func before_test() -> void:
-	_system = GeneticsSystem.new()
+	_system = GeneticsSystemScript.new()
 	_rng = RandomNumberGenerator.new()
 	_rng.seed = 0
 	_system.set_rng(_rng)

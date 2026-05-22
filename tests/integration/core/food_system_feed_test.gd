@@ -3,6 +3,8 @@
 ## GameState and RabbitSystem mocked via Engine.register_singleton.
 extends GdUnitTestSuite
 
+const FoodSystemScript := preload("res://src/core/food_system.gd")
+
 const TEST_FOOD_DEFS: Dictionary = {
 	"grass":  { "max_stack": 99 },
 	"carrot": { "max_stack": 99 },
@@ -35,21 +37,25 @@ class MockRabbitSystem:
 		return feed_return_value
 
 
-var _system: FoodSystem
+var _system: Node
 var _mock_gs: MockGameState
 var _mock_rs: MockRabbitSystem
+var _orig_gs: Object = null
+var _orig_rs: Object = null
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
 	_mock_rs = MockRabbitSystem.new()
+	_orig_gs = Engine.get_singleton("GameState") if Engine.has_singleton("GameState") else null
+	_orig_rs = Engine.get_singleton("RabbitSystem") if Engine.has_singleton("RabbitSystem") else null
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
 	Engine.register_singleton("GameState", _mock_gs)
 	if Engine.has_singleton("RabbitSystem"):
 		Engine.unregister_singleton("RabbitSystem")
 	Engine.register_singleton("RabbitSystem", _mock_rs)
-	_system = FoodSystem.new()
+	_system = FoodSystemScript.new()
 	_system._food_defs = TEST_FOOD_DEFS.duplicate(true)
 	_system._default_max_stack = 99
 
@@ -59,8 +65,14 @@ func after_test() -> void:
 	_system = null
 	if Engine.has_singleton("RabbitSystem"):
 		Engine.unregister_singleton("RabbitSystem")
+	if _orig_rs != null:
+		Engine.register_singleton("RabbitSystem", _orig_rs)
+	_orig_rs = null
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
+	if _orig_gs != null:
+		Engine.register_singleton("GameState", _orig_gs)
+	_orig_gs = null
 
 
 ## AC-1/AC-2: returns false when food_id absent from inventory.

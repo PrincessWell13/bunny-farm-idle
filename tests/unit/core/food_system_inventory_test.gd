@@ -3,6 +3,8 @@
 ## GameState is mocked via Engine.register_singleton. _food_defs injected directly.
 extends GdUnitTestSuite
 
+const FoodSystemScript := preload("res://src/core/food_system.gd")
+
 const TEST_FOOD_DEFS: Dictionary = {
 	"grass":       { "max_stack": 99 },
 	"carrot":      { "max_stack": 99 },
@@ -19,16 +21,18 @@ class MockGameState:
 		food_inventory = {}
 
 
-var _system: FoodSystem
+var _system: Node
 var _mock_gs: MockGameState
+var _orig_gs: Object = null
 
 
 func before_test() -> void:
 	_mock_gs = MockGameState.new()
+	_orig_gs = Engine.get_singleton("GameState") if Engine.has_singleton("GameState") else null
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
 	Engine.register_singleton("GameState", _mock_gs)
-	_system = FoodSystem.new()
+	_system = FoodSystemScript.new()
 	_system._food_defs = TEST_FOOD_DEFS.duplicate(true)
 	_system._default_max_stack = TEST_MAX_STACK
 
@@ -38,6 +42,9 @@ func after_test() -> void:
 	_system = null
 	if Engine.has_singleton("GameState"):
 		Engine.unregister_singleton("GameState")
+	if _orig_gs != null:
+		Engine.register_singleton("GameState", _orig_gs)
+	_orig_gs = null
 
 
 ## AC-1: food_inventory initialises empty after _reset_state().

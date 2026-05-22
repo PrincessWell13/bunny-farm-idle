@@ -4,11 +4,13 @@
 ## and a lightweight helper that overrides prestige_count on the system.
 extends GdUnitTestSuite
 
-var _system: IdleProductionSystem
+const IdleProductionSystemScript := preload("res://src/core/idle_production_system.gd")
+
+var _system: Node
 
 
 func before_test() -> void:
-	_system = IdleProductionSystem.new()
+	_system = IdleProductionSystemScript.new()
 	_system._base_rate = 0.05
 	_system._rabbit_override = []
 	# Do not call _load_balance_data — tests inject _prestige_growth_bonuses directly.
