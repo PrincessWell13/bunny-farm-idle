@@ -31,13 +31,51 @@ var _next_slot_id: int = 0
 
 func _ready() -> void:
 	_load_balance_data()
-	TimeManager.tick.connect(_on_tick)
+	var tm: Node = _time_mgr()
+	if tm != null:
+		tm.tick.connect(_on_tick)
 	call_deferred(&"_resolve_offline_expeditions")
 
 
 func _exit_tree() -> void:
-	if TimeManager.tick.is_connected(_on_tick):
-		TimeManager.tick.disconnect(_on_tick)
+	var tm: Node = _time_mgr()
+	if tm != null and tm.tick.is_connected(_on_tick):
+		tm.tick.disconnect(_on_tick)
+
+
+## Resolves GameState via Engine singleton first to allow test-time mock injection.
+func _gs() -> Node:
+	if Engine.has_singleton("GameState"):
+		return Engine.get_singleton("GameState")
+	return get_node_or_null("/root/GameState")
+
+
+## Resolves EventBus via Engine singleton first to allow test-time mock injection.
+func _event_bus() -> Node:
+	if Engine.has_singleton("EventBus"):
+		return Engine.get_singleton("EventBus")
+	return get_node_or_null("/root/EventBus")
+
+
+## Resolves RabbitSystem via Engine singleton first to allow test-time mock injection.
+func _rabbit_sys() -> Node:
+	if Engine.has_singleton("RabbitSystem"):
+		return Engine.get_singleton("RabbitSystem")
+	return get_node_or_null("/root/RabbitSystem")
+
+
+## Resolves EconomyManager via Engine singleton first to allow test-time mock injection.
+func _economy_mgr() -> Node:
+	if Engine.has_singleton("EconomyManager"):
+		return Engine.get_singleton("EconomyManager")
+	return get_node_or_null("/root/EconomyManager")
+
+
+## Resolves TimeManager via Engine singleton first to allow test-time mock injection.
+func _time_mgr() -> Node:
+	if Engine.has_singleton("TimeManager"):
+		return Engine.get_singleton("TimeManager")
+	return get_node_or_null("/root/TimeManager")
 
 
 ## Reads the expeditions section of balance.json and populates _zone_defs.
@@ -85,18 +123,19 @@ func start_expedition(zone_id: String, rabbit_ids: Array[String]) -> bool:
 		KEY_STATUS:     STATUS_IN_PROGRESS,
 	}
 
-	GameState.active_expeditions.append(slot)
+	_gs().active_expeditions.append(slot)
 
+	var rs: Node = _rabbit_sys()
 	for rabbit_id: String in rabbit_ids:
-		RabbitSystem.send_on_expedition(rabbit_id, slot_id)
+		rs.send_on_expedition(rabbit_id, slot_id)
 
-	EventBus.expedition_started.emit(slot_id, zone_id)
+	_event_bus().expedition_started.emit(slot_id, zone_id)
 	return true
 
 
 ## Returns a snapshot copy of all active expedition slots (read-only).
 func get_active_slots() -> Array:
-	return GameState.active_expeditions.duplicate()
+	return _gs().active_expeditions.duplicate()
 
 
 ## Returns the slot dictionary for slot_id, or {} if not found.
@@ -104,7 +143,7 @@ func get_active_slots() -> Array:
 ## Example:
 ##   var slot: Dictionary = ExpeditionSystem.get_slot("exp_0")
 func get_slot(slot_id: String) -> Dictionary:
-	for slot: Dictionary in GameState.active_expeditions:
+	for slot: Dictionary in _gs().active_expeditions:
 		if slot.get(KEY_SLOT_ID, "") == slot_id:
 			return slot
 	return {}
@@ -117,9 +156,10 @@ func get_slot(slot_id: String) -> Dictionary:
 ## Example:
 ##   var rewards: Dictionary = ExpeditionSystem.collect("exp_0")
 func collect(slot_id: String) -> Dictionary:
+	var gs: Node = _gs()
 	var slot_index: int = -1
-	for i: int in range(GameState.active_expeditions.size()):
-		if GameState.active_expeditions[i][KEY_SLOT_ID] == slot_id:
+	for i: int in range(gs.active_expeditions.size()):
+		if gs.active_expeditions[i][KEY_SLOT_ID] == slot_id:
 			slot_index = i
 			break
 
@@ -127,30 +167,32 @@ func collect(slot_id: String) -> Dictionary:
 		push_warning("ExpeditionSystem.collect: slot_id '%s' not found" % slot_id)
 		return {}
 
-	var slot: Dictionary = GameState.active_expeditions[slot_index]
+	var slot: Dictionary = gs.active_expeditions[slot_index]
 
 	if slot[KEY_STATUS] != STATUS_COMPLETED:
 		push_warning("ExpeditionSystem.collect: slot '%s' is still in_progress" % slot_id)
 		return {}
 
 	# CRITICAL: remove slot FIRST — double-collect guard (ADR-0011)
-	GameState.active_expeditions.remove_at(slot_index)
+	gs.active_expeditions.remove_at(slot_index)
 
 	# Roll loot using the pre-stored seed
 	var rewards: Dictionary = _roll_loot(str(slot[KEY_ZONE_ID]), int(slot[KEY_LOOT_SEED]))
 
 	# Grant rewards via EconomyManager (add_loot_reward routes string item_id to CurrencyType)
+	var em: Node = _economy_mgr()
 	for item_id: String in rewards:
-		EconomyManager.add_loot_reward(item_id, rewards[item_id])
+		em.add_loot_reward(item_id, rewards[item_id])
 
 	# Unlock rabbits
+	var rs: Node = _rabbit_sys()
 	for rabbit_id: String in slot[KEY_RABBIT_IDS]:
-		if RabbitSystem.get_rabbit(rabbit_id) != null:
-			RabbitSystem.return_from_expedition(rabbit_id)
+		if rs.get_rabbit(rabbit_id) != null:
+			rs.return_from_expedition(rabbit_id)
 		else:
 			push_warning("ExpeditionSystem.collect: rabbit '%s' missing at return" % rabbit_id)
 
-	EventBus.expedition_collected.emit(slot_id, rewards)
+	_event_bus().expedition_collected.emit(slot_id, rewards)
 	return rewards
 
 
@@ -194,11 +236,12 @@ func _on_tick(_delta: float) -> void:
 ## Example:
 ##   _tick_at(Time.get_unix_time_from_system())
 func _tick_at(now: float) -> void:
-	for slot: Dictionary in GameState.active_expeditions:
+	var eb: Node = _event_bus()
+	for slot: Dictionary in _gs().active_expeditions:
 		if slot[KEY_STATUS] == STATUS_IN_PROGRESS:
 			if now >= float(slot[KEY_STARTED_AT]) + float(slot[KEY_DURATION]):
 				slot[KEY_STATUS] = STATUS_COMPLETED
-				EventBus.expedition_ready_to_collect.emit(str(slot[KEY_SLOT_ID]), str(slot[KEY_ZONE_ID]))
+				eb.expedition_ready_to_collect.emit(str(slot[KEY_SLOT_ID]), str(slot[KEY_ZONE_ID]))
 
 
 ## Called once via call_deferred from _ready() after SaveSystem has loaded
@@ -225,9 +268,11 @@ func _resolve_offline_expeditions_at(now: float) -> void:
 		KEY_STARTED_AT, KEY_DURATION, KEY_LOOT_SEED, KEY_STATUS
 	]
 
-	var i: int = GameState.active_expeditions.size() - 1
+	var gs: Node = _gs()
+	var eb: Node = _event_bus()
+	var i: int = gs.active_expeditions.size() - 1
 	while i >= 0:
-		var slot: Dictionary = GameState.active_expeditions[i]
+		var slot: Dictionary = gs.active_expeditions[i]
 
 		# Validate: discard malformed slots missing any required key.
 		var is_valid: bool = true
@@ -238,7 +283,7 @@ func _resolve_offline_expeditions_at(now: float) -> void:
 				break
 
 		if not is_valid:
-			GameState.active_expeditions.remove_at(i)
+			gs.active_expeditions.remove_at(i)
 			i -= 1
 			continue
 
@@ -246,7 +291,7 @@ func _resolve_offline_expeditions_at(now: float) -> void:
 		if slot[KEY_STATUS] == STATUS_IN_PROGRESS:
 			if now >= float(slot[KEY_STARTED_AT]) + float(slot[KEY_DURATION]):
 				slot[KEY_STATUS] = STATUS_COMPLETED
-				EventBus.expedition_ready_to_collect.emit(
+				eb.expedition_ready_to_collect.emit(
 					str(slot[KEY_SLOT_ID]),
 					str(slot[KEY_ZONE_ID])
 				)
@@ -269,7 +314,7 @@ func _validate_requirements(zone_id: String, rabbit_ids: Array[String]) -> bool:
 
 	# AC-7: prestige gate
 	var required_prestige: int = int(zone.get("requires_prestige", 0))
-	if required_prestige > 0 and GameState.prestige_count < required_prestige:
+	if required_prestige > 0 and _gs().prestige_count < required_prestige:
 		return false
 
 	# Determine required trait (null in JSON becomes null in GDScript via JSON.parse_string)
@@ -281,8 +326,9 @@ func _validate_requirements(zone_id: String, rabbit_ids: Array[String]) -> bool:
 			required_trait = ""
 
 	# AC-3 / AC-4 / AC-5 / AC-6: per-rabbit checks
+	var rs: Node = _rabbit_sys()
 	for rabbit_id: String in rabbit_ids:
-		var rabbit: RabbitData = RabbitSystem.get_rabbit(rabbit_id)
+		var rabbit: RabbitData = rs.get_rabbit(rabbit_id)
 
 		# AC-3: rabbit must exist
 		if rabbit == null:

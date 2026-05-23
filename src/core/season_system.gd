@@ -37,12 +37,29 @@ var _elapsed_seconds: float = 0.0
 
 func _ready() -> void:
 	_load_balance_data()
-	TimeManager.tick.connect(_on_tick)
+	var tm: Node = _time_mgr()
+	if tm != null:
+		tm.tick.connect(_on_tick)
 
 
 func _exit_tree() -> void:
-	if TimeManager.tick.is_connected(_on_tick):
-		TimeManager.tick.disconnect(_on_tick)
+	var tm: Node = _time_mgr()
+	if tm != null and tm.tick.is_connected(_on_tick):
+		tm.tick.disconnect(_on_tick)
+
+
+## Resolves EventBus via Engine singleton first to allow test-time mock injection.
+func _event_bus() -> Node:
+	if Engine.has_singleton("EventBus"):
+		return Engine.get_singleton("EventBus")
+	return get_node_or_null("/root/EventBus")
+
+
+## Resolves TimeManager via Engine singleton first to allow test-time mock injection.
+func _time_mgr() -> Node:
+	if Engine.has_singleton("TimeManager"):
+		return Engine.get_singleton("TimeManager")
+	return get_node_or_null("/root/TimeManager")
 
 
 ## Loads season timing and multipliers from balance.json.
@@ -114,4 +131,4 @@ func _advance_day() -> void:
 	if _day_within_season >= _days_per_season:
 		_day_within_season = 0
 		_current_season = (_current_season + 1) % SEASON_COUNT
-		EventBus.season_changed.emit(_current_season)
+		_event_bus().season_changed.emit(_current_season)

@@ -16,6 +16,20 @@ func _ready() -> void:
 	_load_balance_data()
 
 
+## Resolves GameState via Engine singleton first to allow test-time mock injection.
+func _gs() -> Node:
+	if Engine.has_singleton("GameState"):
+		return Engine.get_singleton("GameState")
+	return get_node_or_null("/root/GameState")
+
+
+## Resolves RabbitSystem via Engine singleton first to allow test-time mock injection.
+func _rabbit_sys() -> Node:
+	if Engine.has_singleton("RabbitSystem"):
+		return Engine.get_singleton("RabbitSystem")
+	return get_node_or_null("/root/RabbitSystem")
+
+
 ## Reads balance.json and sets _max_prestige_level from prestige.max_level.
 ## Calls push_error() on missing key or parse failure; falls back to 20.
 func _load_balance_data() -> void:
@@ -40,9 +54,9 @@ func _load_balance_data() -> void:
 ##   - RabbitSystem.has_legendary_rabbit() returns true
 ##   - _collection_threshold_met() returns true (stubbed)
 func can_prestige() -> bool:
-	if GameState.prestige_count >= _max_prestige_level:
+	if _gs().prestige_count >= _max_prestige_level:
 		return false
-	if not RabbitSystem.has_legendary_rabbit():
+	if not _rabbit_sys().has_legendary_rabbit():
 		return false
 	if not _collection_threshold_met():
 		return false
@@ -57,9 +71,9 @@ func execute_prestige() -> void:
 		push_warning("PrestigeSystem: execute_prestige() called when can_prestige() == false — no-op")
 		return
 	var keep: Dictionary = {
-		"legendary_rabbit_ids": RabbitSystem.get_legendary_rabbit_ids()
+		"legendary_rabbit_ids": _rabbit_sys().get_legendary_rabbit_ids()
 	}
-	GameState.prestige_reset(keep)
+	_gs().prestige_reset(keep)
 
 
 ## Stub always returns true — CollectionSystem not yet implemented.

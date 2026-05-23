@@ -36,6 +36,21 @@ func _process(delta: float) -> void:
 		for rabbit: RabbitData in snapshot:
 			_tick_rabbit(rabbit, 1.0)
 
+
+## Resolves GameState via Engine singleton first to allow test-time mock injection.
+func _gs() -> Node:
+	if Engine.has_singleton("GameState"):
+		return Engine.get_singleton("GameState")
+	return get_node_or_null("/root/GameState")
+
+
+## Resolves EventBus via Engine singleton first to allow test-time mock injection.
+func _event_bus() -> Node:
+	if Engine.has_singleton("EventBus"):
+		return Engine.get_singleton("EventBus")
+	return get_node_or_null("/root/EventBus")
+
+
 ## Loads decay rates from balance.json "rabbit" section. Falls back to defaults on failure.
 func _load_balance_data() -> void:
 	var text: String = FileAccess.get_file_as_string("res://assets/data/balance.json")
@@ -73,7 +88,7 @@ func _tick_rabbit(rabbit: RabbitData, delta: float) -> void:
 		rabbit.health = maxf(0.0, rabbit.health - _health_decay_when_starving * delta)
 	_check_stage_advance(rabbit)
 	_check_death(rabbit)
-	GameState.mark_dirty()
+	_gs().mark_dirty()
 
 ## Advances rabbit's stage when growth_progress or time thresholds are crossed.
 ## Emits EventBus.rabbit_matured on every advance. Stages never regress (ADR-0005).
@@ -103,7 +118,7 @@ func _check_stage_advance(rabbit: RabbitData) -> void:
 		RabbitData.RabbitStage.SANCTUARY:
 			pass
 	if advanced:
-		EventBus.rabbit_matured.emit(rabbit.rabbit_id, rabbit.stage)
+		_event_bus().rabbit_matured.emit(rabbit.rabbit_id, rabbit.stage)
 
 ## Removes the rabbit and emits rabbit_died when health reaches 0.
 ## remove_rabbit runs before emit so listeners calling get_rabbit receive null (ADR-0005).
@@ -111,7 +126,7 @@ func _check_death(rabbit: RabbitData) -> void:
 	if rabbit.health <= 0.0:
 		var dead_id: String = rabbit.rabbit_id
 		remove_rabbit(dead_id)
-		EventBus.rabbit_died.emit(dead_id)
+		_event_bus().rabbit_died.emit(dead_id)
 
 ## Assigns a unique rabbit_id if data.rabbit_id is empty, stores rabbit in the internal
 ## roster and in GameState.rabbits, marks state dirty, and returns the assigned id.
@@ -119,8 +134,9 @@ func add_rabbit(data: RabbitData) -> String:
 	if data.rabbit_id.is_empty():
 		data.rabbit_id = _generate_id()
 	_rabbits[data.rabbit_id] = data
-	GameState.rabbits.append(data)
-	GameState.mark_dirty()
+	var gs: Node = _gs()
+	gs.rabbits.append(data)
+	gs.mark_dirty()
 	return data.rabbit_id
 
 ## Returns the RabbitData for the given id, or null if not found.
@@ -140,7 +156,7 @@ func set_hutch_id(rabbit_id: String, hutch_id: String) -> void:
 	if rabbit == null:
 		return
 	rabbit.hutch_id = hutch_id
-	GameState.mark_dirty()
+	_gs().mark_dirty()
 
 
 ## Returns only rabbits whose hutch_id matches the given id.
@@ -158,8 +174,9 @@ func remove_rabbit(rabbit_id: String) -> void:
 		return
 	var rabbit: RabbitData = _rabbits[rabbit_id]
 	_rabbits.erase(rabbit_id)
-	GameState.rabbits.erase(rabbit)
-	GameState.mark_dirty()
+	var gs: Node = _gs()
+	gs.rabbits.erase(rabbit)
+	gs.mark_dirty()
 
 ## Applies food stat effects to the rabbit identified by rabbit_id.
 ## food_type must match a key in balance.json food.items (e.g. "grass", "carrot").
@@ -180,7 +197,7 @@ func feed_rabbit(rabbit_id: String, food_type: String) -> bool:
 			rabbit.happiness = minf(100.0, rabbit.happiness + _star_carrot_happiness_bonus)
 		_:
 			push_warning("RabbitSystem: unknown food type '%s'" % food_type)
-	GameState.mark_dirty()
+	_gs().mark_dirty()
 	return true
 
 func _generate_id() -> String:
@@ -196,7 +213,7 @@ func send_on_expedition(rabbit_id: String, slot_id: String) -> void:
 		push_warning("RabbitSystem.send_on_expedition: unknown rabbit '%s'" % rabbit_id)
 		return
 	rabbit.is_on_expedition = true
-	GameState.mark_dirty()
+	_gs().mark_dirty()
 	# slot_id is reserved for future UI display in story-002; parameter retained for API stability.
 
 
@@ -209,7 +226,7 @@ func return_from_expedition(rabbit_id: String) -> void:
 		push_warning("RabbitSystem.return_from_expedition: unknown rabbit '%s'" % rabbit_id)
 		return
 	rabbit.is_on_expedition = false
-	GameState.mark_dirty()
+	_gs().mark_dirty()
 
 
 ## Returns true if any rabbit in the roster has rarity LEGENDARY.

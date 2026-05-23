@@ -6,6 +6,10 @@ extends Control
 
 enum NavTab { FARM = 0, BREEDING = 1, GUILD = 2, SHOP = 3, QUEST = 4 }
 
+## Currency index mirrors EconomyManager.CurrencyType — avoids autoload enum access in tests.
+const _CURRENCY_CARROT_COIN := 0
+const _CURRENCY_CRYSTAL_GEM := 2
+
 ## Story-001: header currency labels
 @export var cc_label: Label
 @export var gem_label: Label
@@ -44,10 +48,12 @@ var _active_tab: int = NavTab.FARM
 var _active_tween: Tween = null
 
 func _ready() -> void:
-	EventBus.currency_changed.connect(_on_currency_changed)
-	EventBus.notification_requested.connect(_on_notification_requested)
-	cc_label.text = str(EconomyManager.get_balance(EconomyManager.CurrencyType.CARROT_COIN))
-	gem_label.text = str(EconomyManager.get_balance(EconomyManager.CurrencyType.CRYSTAL_GEM))
+	var eb: Node = _event_bus()
+	eb.currency_changed.connect(_on_currency_changed)
+	eb.notification_requested.connect(_on_notification_requested)
+	var em: Node = _economy_mgr()
+	cc_label.text = str(em.get_balance(_CURRENCY_CARROT_COIN))
+	gem_label.text = str(em.get_balance(_CURRENCY_CRYSTAL_GEM))
 	farm_button.pressed.connect(_on_tab_pressed.bind(NavTab.FARM))
 	breeding_button.pressed.connect(_on_tab_pressed.bind(NavTab.BREEDING))
 	guild_button.pressed.connect(_on_tab_pressed.bind(NavTab.GUILD))
@@ -57,16 +63,16 @@ func _ready() -> void:
 	_hide_notification()
 	if prestige_button != null:
 		prestige_button.pressed.connect(_on_prestige_tapped)
-		EventBus.rabbit_born.connect(_on_prestige_state_changed)
-		EventBus.breeding_completed.connect(_on_prestige_state_changed)
+		eb.rabbit_born.connect(_on_prestige_state_changed)
+		eb.breeding_completed.connect(_on_prestige_state_changed)
 		_refresh_prestige_button()
 	if prestige_confirm_dialog != null:
 		prestige_confirm_dialog.dialog_text = "Prestige now? Your coins and farm will reset, but you will earn a permanent production bonus."
 		prestige_confirm_dialog.confirmed.connect(_on_prestige_confirmed)
-	EventBus.food_harvested.connect(_on_food_harvested)
-	EventBus.food_used.connect(_on_food_used)
+	eb.food_harvested.connect(_on_food_harvested)
+	eb.food_used.connect(_on_food_used)
 	_refresh_food_display()
-	EventBus.farm_plots_updated.connect(_on_farm_plots_updated)
+	eb.farm_plots_updated.connect(_on_farm_plots_updated)
 	_countdown_timer = Timer.new()
 	_countdown_timer.wait_time = 1.0
 	_countdown_timer.autostart = true
@@ -75,27 +81,57 @@ func _ready() -> void:
 	_refresh_all_plots()
 
 func _exit_tree() -> void:
-	if EventBus.currency_changed.is_connected(_on_currency_changed):
-		EventBus.currency_changed.disconnect(_on_currency_changed)
-	if EventBus.notification_requested.is_connected(_on_notification_requested):
-		EventBus.notification_requested.disconnect(_on_notification_requested)
-	if EventBus.rabbit_born.is_connected(_on_prestige_state_changed):
-		EventBus.rabbit_born.disconnect(_on_prestige_state_changed)
-	if EventBus.breeding_completed.is_connected(_on_prestige_state_changed):
-		EventBus.breeding_completed.disconnect(_on_prestige_state_changed)
-	if EventBus.food_harvested.is_connected(_on_food_harvested):
-		EventBus.food_harvested.disconnect(_on_food_harvested)
-	if EventBus.food_used.is_connected(_on_food_used):
-		EventBus.food_used.disconnect(_on_food_used)
-	if EventBus.farm_plots_updated.is_connected(_on_farm_plots_updated):
-		EventBus.farm_plots_updated.disconnect(_on_farm_plots_updated)
+	var eb: Node = _event_bus()
+	if eb.currency_changed.is_connected(_on_currency_changed):
+		eb.currency_changed.disconnect(_on_currency_changed)
+	if eb.notification_requested.is_connected(_on_notification_requested):
+		eb.notification_requested.disconnect(_on_notification_requested)
+	if eb.rabbit_born.is_connected(_on_prestige_state_changed):
+		eb.rabbit_born.disconnect(_on_prestige_state_changed)
+	if eb.breeding_completed.is_connected(_on_prestige_state_changed):
+		eb.breeding_completed.disconnect(_on_prestige_state_changed)
+	if eb.food_harvested.is_connected(_on_food_harvested):
+		eb.food_harvested.disconnect(_on_food_harvested)
+	if eb.food_used.is_connected(_on_food_used):
+		eb.food_used.disconnect(_on_food_used)
+	if eb.farm_plots_updated.is_connected(_on_farm_plots_updated):
+		eb.farm_plots_updated.disconnect(_on_farm_plots_updated)
+
+
+## Resolves EventBus via Engine singleton first to allow test-time mock injection.
+func _event_bus() -> Node:
+	if Engine.has_singleton("EventBus"):
+		return Engine.get_singleton("EventBus")
+	return get_node_or_null("/root/EventBus")
+
+
+## Resolves EconomyManager via Engine singleton first to allow test-time mock injection.
+func _economy_mgr() -> Node:
+	if Engine.has_singleton("EconomyManager"):
+		return Engine.get_singleton("EconomyManager")
+	return get_node_or_null("/root/EconomyManager")
+
+
+## Resolves FoodSystem via Engine singleton first to allow test-time mock injection.
+func _food_sys() -> Node:
+	if Engine.has_singleton("FoodSystem"):
+		return Engine.get_singleton("FoodSystem")
+	return get_node_or_null("/root/FoodSystem")
+
+
+## Resolves PrestigeSystem via Engine singleton first to allow test-time mock injection.
+func _prestige_sys() -> Node:
+	if Engine.has_singleton("PrestigeSystem"):
+		return Engine.get_singleton("PrestigeSystem")
+	return get_node_or_null("/root/PrestigeSystem")
+
 
 ## Updates CC or Gem label when currency_changed fires. Also re-evaluates prestige eligibility.
 func _on_currency_changed(currency: int, new_balance: int, _delta: int) -> void:
 	match currency:
-		EconomyManager.CurrencyType.CARROT_COIN:
+		_CURRENCY_CARROT_COIN:
 			cc_label.text = str(new_balance)
-		EconomyManager.CurrencyType.CRYSTAL_GEM:
+		_CURRENCY_CRYSTAL_GEM:
 			gem_label.text = str(new_balance)
 	_refresh_prestige_button()
 
@@ -104,7 +140,7 @@ func _on_tab_pressed(tab: int) -> void:
 	if tab == _active_tab:
 		return
 	_set_active_tab(tab)
-	EventBus.nav_tab_pressed.emit(tab)
+	_event_bus().nav_tab_pressed.emit(tab)
 
 func _set_active_tab(tab: int) -> void:
 	_active_tab = tab
@@ -148,7 +184,10 @@ func get_food_count(food_id: String) -> int:
 ## Reads FoodSystem.get_inventory() and initialises _food_counts from current state (AC-2).
 ## Ensures labels show the saved value rather than assuming 0 on load.
 func _refresh_food_display() -> void:
-	var inventory: Dictionary = FoodSystem.get_inventory()
+	var fs: Node = _food_sys()
+	if fs == null:
+		return
+	var inventory: Dictionary = fs.get_inventory()
 	for food_id: String in inventory:
 		_food_counts[food_id] = int(inventory.get(food_id, 0))
 		_update_food_label(food_id)
@@ -176,7 +215,10 @@ func _on_food_used(food_id: String) -> void:
 func _refresh_prestige_button() -> void:
 	if prestige_button == null:
 		return
-	var eligible: bool = PrestigeSystem.can_prestige()
+	var ps: Node = _prestige_sys()
+	if ps == null:
+		return
+	var eligible: bool = ps.can_prestige()
 	prestige_button.disabled = not eligible
 	prestige_button.modulate = Color.WHITE if eligible else Color(1.0, 1.0, 1.0, 0.4)
 
@@ -186,7 +228,8 @@ func _on_prestige_state_changed(_arg: Variant = null) -> void:
 
 ## Shows confirmation dialog when prestige button tapped while eligible (AC-4, AC-5).
 func _on_prestige_tapped() -> void:
-	if not PrestigeSystem.can_prestige():
+	var ps: Node = _prestige_sys()
+	if ps == null or not ps.can_prestige():
 		return
 	if prestige_confirm_dialog != null:
 		prestige_confirm_dialog.popup_centered()
@@ -194,14 +237,19 @@ func _on_prestige_tapped() -> void:
 ## Calls PrestigeSystem.execute_prestige() after player confirms (AC-6, AC-8).
 ## HUD never mutates game state directly — all state change delegated to PrestigeSystem (ADR-0003).
 func _on_prestige_confirmed() -> void:
-	PrestigeSystem.execute_prestige()
+	var ps: Node = _prestige_sys()
+	if ps != null:
+		ps.execute_prestige()
 	_refresh_prestige_button()
 
 ## --- Story-005: Farm Plot Progress UI ---
 
 ## Reads FoodSystem.get_farm_plot_state() and re-renders all slot labels and buttons (AC-1, AC-9).
 func _refresh_all_plots() -> void:
-	_plot_states = FoodSystem.get_farm_plot_state()
+	var fs: Node = _food_sys()
+	if fs == null:
+		return
+	_plot_states = fs.get_farm_plot_state()
 	var slot_count: int = plot_slot_labels.size()
 	for i: int in range(slot_count):
 		if i < _plot_states.size():
@@ -265,4 +313,6 @@ func on_plot_tapped(plot_index: int) -> void:
 	var remaining: float = float(plot.get("started_at", 0.0)) + float(plot.get("duration", 0.0)) - now
 	if remaining > 0.0:
 		return
-	FoodSystem.harvest_plot(plot_index)
+	var fs: Node = _food_sys()
+	if fs != null:
+		fs.harvest_plot(plot_index)

@@ -36,15 +36,38 @@ func _ready() -> void:
 	_load_balance_data()
 	breed_button.pressed.connect(_on_breed_button_pressed)
 	close_button.pressed.connect(_on_close_button_pressed)
-	EventBus.rabbit_born.connect(_on_rabbit_born)
+	_event_bus().rabbit_born.connect(_on_rabbit_born)
 	_hide_reveal_panel()
 	_populate_rabbit_list()
 	_update_breed_button()
 	_hide_preview()
 
 func _exit_tree() -> void:
-	if EventBus.rabbit_born.is_connected(_on_rabbit_born):
-		EventBus.rabbit_born.disconnect(_on_rabbit_born)
+	var eb: Node = _event_bus()
+	if eb.rabbit_born.is_connected(_on_rabbit_born):
+		eb.rabbit_born.disconnect(_on_rabbit_born)
+
+
+## Resolves EventBus via Engine singleton first to allow test-time mock injection.
+func _event_bus() -> Node:
+	if Engine.has_singleton("EventBus"):
+		return Engine.get_singleton("EventBus")
+	return get_node_or_null("/root/EventBus")
+
+
+## Resolves RabbitSystem via Engine singleton first to allow test-time mock injection.
+func _rabbit_sys() -> Node:
+	if Engine.has_singleton("RabbitSystem"):
+		return Engine.get_singleton("RabbitSystem")
+	return get_node_or_null("/root/RabbitSystem")
+
+
+## Resolves GeneticsSystem via Engine singleton first to allow test-time mock injection.
+func _genetics_sys() -> Node:
+	if Engine.has_singleton("GeneticsSystem"):
+		return Engine.get_singleton("GeneticsSystem")
+	return get_node_or_null("/root/GeneticsSystem")
+
 
 ## Clears and rebuilds the rabbit entry list, showing adult rabbits only (AC-1).
 func _populate_rabbit_list() -> void:
@@ -52,7 +75,7 @@ func _populate_rabbit_list() -> void:
 	_entry_buttons.clear()
 	for child: Node in rabbit_list_container.get_children():
 		child.queue_free()
-	var all_rabbits: Array[RabbitData] = RabbitSystem.get_all_rabbits()
+	var all_rabbits: Array[RabbitData] = _rabbit_sys().get_all_rabbits()
 	for rabbit: RabbitData in all_rabbits:
 		if rabbit.stage != RabbitData.RabbitStage.ADULT:
 			continue
@@ -93,19 +116,20 @@ func _update_breed_button() -> void:
 func _on_breed_button_pressed() -> void:
 	if parent_a_id == "" or parent_b_id == "" or parent_a_id == parent_b_id:
 		return
-	EventBus.breed_requested.emit(parent_a_id, parent_b_id)
+	_event_bus().breed_requested.emit(parent_a_id, parent_b_id)
 
 ## Calls get_breed_preview() (pure read) and updates the preview panel labels (AC-3).
 func _update_preview() -> void:
 	if parent_a_id == "" or parent_b_id == "":
 		_hide_preview()
 		return
-	var rabbit_a: RabbitData = RabbitSystem.get_rabbit(parent_a_id)
-	var rabbit_b: RabbitData = RabbitSystem.get_rabbit(parent_b_id)
+	var rs: Node = _rabbit_sys()
+	var rabbit_a: RabbitData = rs.get_rabbit(parent_a_id)
+	var rabbit_b: RabbitData = rs.get_rabbit(parent_b_id)
 	if rabbit_a == null or rabbit_b == null:
 		_hide_preview()
 		return
-	var bp: BreedPreview = GeneticsSystem.get_breed_preview(rabbit_a, rabbit_b)
+	var bp: BreedPreview = _genetics_sys().get_breed_preview(rabbit_a, rabbit_b)
 	var rarity_idx: int = clampi(bp.estimated_rarity, 0, RARITY_LABELS.size() - 1)
 	preview_rarity_label.text = RARITY_LABELS[rarity_idx]
 	preview_mutation_label.text = "%.1f%%" % (bp.mutation_chance * 100.0)
@@ -133,7 +157,7 @@ func _top_key(d: Dictionary) -> String:
 ## Handles rabbit_born signal — reads child data and triggers reveal (AC-2).
 ## AC-6: silently skips if child not found (already removed from roster).
 func _on_rabbit_born(child_id: String) -> void:
-	var child: RabbitData = RabbitSystem.get_rabbit(child_id)
+	var child: RabbitData = _rabbit_sys().get_rabbit(child_id)
 	if child == null:
 		return
 	_show_reveal_panel(child)
@@ -155,7 +179,7 @@ func _populate_reveal_data(child: RabbitData) -> void:
 	color_label.text = child.genome.color.expressed()
 	trait_a_label.text = child.genome.trait_a.expressed()
 	trait_b_label.text = child.genome.trait_b.expressed()
-	var rarity_int: int = int(GeneticsSystem.get_rarity(child))
+	var rarity_int: int = int(_genetics_sys().get_rarity(child))
 	rarity_label.text = RARITY_LABELS[clampi(rarity_int, 0, RARITY_LABELS.size() - 1)]
 
 ## Hides the reveal panel and resets parent selection (AC-5).

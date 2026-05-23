@@ -53,7 +53,7 @@ func _make_rabbit(hunger: float = 50.0, growth: float = 0.0, happiness: float = 
 ## AC-1: grass increases hunger by _grass_hunger_restore.
 func test_feed_grass_increases_hunger() -> void:
 	var id := _make_rabbit(50.0)
-	var result: bool = _system.feed_rabbit(id, RabbitSystem.FoodItem.new("grass"))
+	var result: bool = _system.feed_rabbit(id, "grass")
 	assert_bool(result).is_true()
 	assert_float(_system.get_rabbit(id).hunger).is_equal_approx(80.0, 0.001)
 
@@ -61,7 +61,7 @@ func test_feed_grass_increases_hunger() -> void:
 ## AC-2: carrot increases hunger and growth_progress.
 func test_feed_carrot_increases_hunger_and_growth() -> void:
 	var id := _make_rabbit(50.0, 20.0)
-	_system.feed_rabbit(id, RabbitSystem.FoodItem.new("carrot"))
+	_system.feed_rabbit(id, "carrot")
 	var rabbit: RabbitData = _system.get_rabbit(id)
 	assert_float(rabbit.hunger).is_equal_approx(90.0, 0.001)
 	assert_float(rabbit.growth_progress).is_equal_approx(30.0, 0.001)
@@ -70,20 +70,20 @@ func test_feed_carrot_increases_hunger_and_growth() -> void:
 ## AC-3: hunger clamps at 100.0 on overflow.
 func test_feed_clamps_hunger_at_100() -> void:
 	var id := _make_rabbit(90.0)
-	_system.feed_rabbit(id, RabbitSystem.FoodItem.new("carrot"))  # +40 would give 130
+	_system.feed_rabbit(id, "carrot")  # +40 would give 130
 	assert_float(_system.get_rabbit(id).hunger).is_equal(100.0)
 
 
 ## AC-4: returns false for unknown rabbit_id — no crash.
 func test_feed_returns_false_for_unknown_rabbit() -> void:
-	var result: bool = _system.feed_rabbit("phantom-id", RabbitSystem.FoodItem.new("grass"))
+	var result: bool = _system.feed_rabbit("phantom-id", "grass")
 	assert_bool(result).is_false()
 
 
 ## AC-5: star_carrot increases growth_progress and happiness.
 func test_feed_star_carrot_increases_growth_and_happiness() -> void:
 	var id := _make_rabbit(50.0, 40.0, 60.0)
-	_system.feed_rabbit(id, RabbitSystem.FoodItem.new("star_carrot"))
+	_system.feed_rabbit(id, "star_carrot")
 	var rabbit: RabbitData = _system.get_rabbit(id)
 	assert_float(rabbit.growth_progress).is_equal_approx(65.0, 0.001)
 	assert_float(rabbit.happiness).is_equal_approx(70.0, 0.001)

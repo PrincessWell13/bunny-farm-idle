@@ -25,13 +25,51 @@ var _food_defs: Dictionary = {}
 
 func _ready() -> void:
 	_load_balance_data()
-	TimeManager.tick.connect(_on_tick)
+	var tm: Node = _time_mgr()
+	if tm != null:
+		tm.tick.connect(_on_tick)
 	call_deferred(&"_resolve_offline_plots")
 
 
 func _exit_tree() -> void:
-	if TimeManager.tick.is_connected(_on_tick):
-		TimeManager.tick.disconnect(_on_tick)
+	var tm: Node = _time_mgr()
+	if tm != null and tm.tick.is_connected(_on_tick):
+		tm.tick.disconnect(_on_tick)
+
+
+## Resolves GameState via Engine singleton first to allow test-time mock injection.
+func _gs() -> Node:
+	if Engine.has_singleton("GameState"):
+		return Engine.get_singleton("GameState")
+	return get_node_or_null("/root/GameState")
+
+
+## Resolves EventBus via Engine singleton first to allow test-time mock injection.
+func _event_bus() -> Node:
+	if Engine.has_singleton("EventBus"):
+		return Engine.get_singleton("EventBus")
+	return get_node_or_null("/root/EventBus")
+
+
+## Resolves RabbitSystem via Engine singleton first to allow test-time mock injection.
+func _rabbit_sys() -> Node:
+	if Engine.has_singleton("RabbitSystem"):
+		return Engine.get_singleton("RabbitSystem")
+	return get_node_or_null("/root/RabbitSystem")
+
+
+## Resolves EconomyManager via Engine singleton first to allow test-time mock injection.
+func _economy_mgr() -> Node:
+	if Engine.has_singleton("EconomyManager"):
+		return Engine.get_singleton("EconomyManager")
+	return get_node_or_null("/root/EconomyManager")
+
+
+## Resolves TimeManager via Engine singleton first to allow test-time mock injection.
+func _time_mgr() -> Node:
+	if Engine.has_singleton("TimeManager"):
+		return Engine.get_singleton("TimeManager")
+	return get_node_or_null("/root/TimeManager")
 
 
 ## Reads the food section of balance.json and populates _food_defs and _default_max_stack.
@@ -58,12 +96,12 @@ func _load_balance_data() -> void:
 ## Returns a snapshot copy of the current food inventory.
 ## Callers must not mutate the returned Dictionary — it is a duplicate, not a reference.
 func get_inventory() -> Dictionary:
-	return GameState.food_inventory.duplicate()
+	return _gs().food_inventory.duplicate()
 
 
 ## Returns a snapshot copy of the current farm plot array (read-only).
 func get_farm_plot_state() -> Array:
-	return GameState.farm_plots.duplicate()
+	return _gs().farm_plots.duplicate()
 
 
 ## Deducts one unit of food_id from inventory and delegates stat effects to RabbitSystem.
@@ -72,20 +110,22 @@ func get_farm_plot_state() -> Array:
 ## FoodSystem emits no signal on this path — RabbitSystem owns rabbit_fed.
 ## Returns true on success, false if rabbit unknown, food absent/zero, or RabbitSystem rejects.
 func feed_rabbit(rabbit_id: String, food_id: String) -> bool:
-	if RabbitSystem.get_rabbit(rabbit_id) == null:
+	var rs: Node = _rabbit_sys()
+	if rs == null or rs.get_rabbit(rabbit_id) == null:
 		return false
-	var stock: int = GameState.food_inventory.get(food_id, 0)
+	var gs: Node = _gs()
+	var stock: int = gs.food_inventory.get(food_id, 0)
 	if stock <= 0:
 		return false
-	GameState.food_inventory[food_id] = stock - 1
-	GameState.mark_dirty()
-	var accepted: bool = RabbitSystem.feed_rabbit(rabbit_id, food_id)
+	gs.food_inventory[food_id] = stock - 1
+	gs.mark_dirty()
+	var accepted: bool = rs.feed_rabbit(rabbit_id, food_id)
 	if not accepted:
-		GameState.food_inventory[food_id] = stock
-		GameState.mark_dirty()
+		gs.food_inventory[food_id] = stock
+		gs.mark_dirty()
 		push_warning("FoodSystem: RabbitSystem rejected feed for rabbit '%s' — rolled back" % rabbit_id)
 		return false
-	EventBus.food_used.emit(food_id)
+	_event_bus().food_used.emit(food_id)
 	return true
 
 
@@ -94,19 +134,21 @@ func feed_rabbit(rabbit_id: String, food_id: String) -> bool:
 ## On success: removes the plot, grants harvest_quantity food,
 ## emits food_harvested(food_id, quantity) and farm_plots_updated().
 func harvest_plot(plot_index: int) -> bool:
-	if plot_index < 0 or plot_index >= GameState.farm_plots.size():
+	var gs: Node = _gs()
+	if plot_index < 0 or plot_index >= gs.farm_plots.size():
 		return false
-	var plot: Dictionary = GameState.farm_plots[plot_index]
+	var plot: Dictionary = gs.farm_plots[plot_index]
 	var now: float = Time.get_unix_time_from_system()
 	if now - float(plot[KEY_STARTED_AT]) < float(plot[KEY_DURATION]):
 		return false
 	var food_id: String = str(plot[KEY_FOOD_ID])
 	var harvest_qty: int = int(_food_defs.get(food_id, {}).get(&"harvest_quantity", 1))
-	GameState.farm_plots.remove_at(plot_index)
+	gs.farm_plots.remove_at(plot_index)
 	_add_to_inventory(food_id, harvest_qty)
-	GameState.mark_dirty()
-	EventBus.food_harvested.emit(food_id, harvest_qty)
-	EventBus.farm_plots_updated.emit()
+	gs.mark_dirty()
+	var eb: Node = _event_bus()
+	eb.food_harvested.emit(food_id, harvest_qty)
+	eb.farm_plots_updated.emit()
 	return true
 
 
@@ -117,15 +159,17 @@ func seed_plot(food_id: String) -> bool:
 		push_warning("FoodSystem: seed_plot called with unknown food_id '%s'" % food_id)
 		return false
 	var cost: int = int(_food_defs[food_id].get(&"seed_cost", 0))
-	if not EconomyManager.spend(EconomyManager.CurrencyType.CARROT_COIN, cost):
+	var em: Node = _economy_mgr()
+	if not em.spend(em.CurrencyType.CARROT_COIN, cost):
 		return false
 	var plot: Dictionary = {
 		KEY_FOOD_ID:    food_id,
 		KEY_STARTED_AT: Time.get_unix_time_from_system(),
 		KEY_DURATION:   float(_food_defs[food_id].get(&"grow_time_seconds", 60.0)),
 	}
-	GameState.farm_plots.append(plot)
-	GameState.mark_dirty()
+	var gs: Node = _gs()
+	gs.farm_plots.append(plot)
+	gs.mark_dirty()
 	return true
 
 
@@ -135,22 +179,24 @@ func _add_to_inventory(food_id: String, quantity: int) -> void:
 	if not _food_defs.has(food_id):
 		push_warning("FoodSystem: unknown food_id '%s' — skipping inventory add" % food_id)
 		return
-	var current: int = GameState.food_inventory.get(food_id, 0)
+	var gs: Node = _gs()
+	var current: int = gs.food_inventory.get(food_id, 0)
 	var item_def: Dictionary = _food_defs[food_id] as Dictionary
 	var max_stack: int = int(item_def.get(KEY_MAX_STACK, _default_max_stack))
-	GameState.food_inventory[food_id] = mini(current + quantity, max_stack)
-	GameState.mark_dirty()
+	gs.food_inventory[food_id] = mini(current + quantity, max_stack)
+	gs.mark_dirty()
 
 
 ## Deducts quantity of food_id from inventory.
 ## Returns false (and makes no change) if current quantity < quantity.
 ## Returns true and decrements on success.
 func _deduct_from_inventory(food_id: String, quantity: int) -> bool:
-	var current: int = GameState.food_inventory.get(food_id, 0)
+	var gs: Node = _gs()
+	var current: int = gs.food_inventory.get(food_id, 0)
 	if current < quantity:
 		return false
-	GameState.food_inventory[food_id] = current - quantity
-	GameState.mark_dirty()
+	gs.food_inventory[food_id] = current - quantity
+	gs.mark_dirty()
 	return true
 
 
@@ -159,44 +205,48 @@ func _deduct_from_inventory(food_id: String, quantity: int) -> bool:
 ## GameState.farm_plots. Each completed plot yields exactly one harvest regardless of how
 ## long it was overdue — no multi-tick overflow (ADR-0009: "no partial credit").
 func _resolve_offline_plots() -> void:
+	var gs: Node = _gs()
 	var now: float = Time.get_unix_time_from_system()
 	var completed: Array[int] = []
-	for i: int in range(GameState.farm_plots.size()):
-		var plot: Dictionary = GameState.farm_plots[i]
+	for i: int in range(gs.farm_plots.size()):
+		var plot: Dictionary = gs.farm_plots[i]
 		if now - float(plot[KEY_STARTED_AT]) >= float(plot[KEY_DURATION]):
 			completed.append(i)
 	completed.reverse()
+	var eb: Node = _event_bus()
 	for idx: int in completed:
-		var plot: Dictionary = GameState.farm_plots[idx]
+		var plot: Dictionary = gs.farm_plots[idx]
 		var food_id: String = str(plot[KEY_FOOD_ID])
 		var harvest_qty: int = int(_food_defs.get(food_id, {}).get(&"harvest_quantity", 1))
-		GameState.farm_plots.remove_at(idx)
+		gs.farm_plots.remove_at(idx)
 		_add_to_inventory(food_id, harvest_qty)
-		EventBus.food_harvested.emit(food_id, harvest_qty)
+		eb.food_harvested.emit(food_id, harvest_qty)
 	if not completed.is_empty():
-		GameState.mark_dirty()
+		gs.mark_dirty()
 
 
 ## Checks all farm plots for completion on each TimeManager tick.
 ## Completed plots are removed, their harvest added to inventory, and food_harvested emitted.
 ## Removal uses reverse-index order to avoid index-shifting on multiple simultaneous completions (ADR-0009).
 func _on_tick(_delta: float) -> void:
+	var gs: Node = _gs()
 	var now: float = Time.get_unix_time_from_system()
 	var completed: Array[int] = []
-	for i: int in range(GameState.farm_plots.size()):
-		var plot: Dictionary = GameState.farm_plots[i]
+	for i: int in range(gs.farm_plots.size()):
+		var plot: Dictionary = gs.farm_plots[i]
 		var elapsed: float = now - float(plot[KEY_STARTED_AT])
 		if elapsed >= float(plot[KEY_DURATION]):
 			completed.append(i)
 	completed.reverse()
+	var eb: Node = _event_bus()
 	for idx: int in completed:
-		var plot: Dictionary = GameState.farm_plots[idx]
+		var plot: Dictionary = gs.farm_plots[idx]
 		var food_id: String = str(plot[KEY_FOOD_ID])
 		var harvest_qty: int = int(_food_defs.get(food_id, {}).get(&"harvest_quantity", 1))
-		GameState.farm_plots.remove_at(idx)
+		gs.farm_plots.remove_at(idx)
 		_add_to_inventory(food_id, harvest_qty)
-		EventBus.food_harvested.emit(food_id, harvest_qty)
+		eb.food_harvested.emit(food_id, harvest_qty)
 	if not completed.is_empty():
-		GameState.mark_dirty()
-	if not GameState.farm_plots.is_empty():
-		EventBus.farm_plots_updated.emit()
+		gs.mark_dirty()
+	if not gs.farm_plots.is_empty():
+		eb.farm_plots_updated.emit()

@@ -20,12 +20,43 @@ var _capacity_table: Array = [4]
 
 func _ready() -> void:
 	_load_balance_data()
-	TimeManager.tick.connect(_on_tick)
+	var tm: Node = _time_mgr()
+	if tm != null:
+		tm.tick.connect(_on_tick)
 
 
 func _exit_tree() -> void:
-	if TimeManager.tick.is_connected(_on_tick):
-		TimeManager.tick.disconnect(_on_tick)
+	var tm: Node = _time_mgr()
+	if tm != null and tm.tick.is_connected(_on_tick):
+		tm.tick.disconnect(_on_tick)
+
+
+## Resolves GameState via Engine singleton first to allow test-time mock injection.
+func _gs() -> Node:
+	if Engine.has_singleton("GameState"):
+		return Engine.get_singleton("GameState")
+	return get_node_or_null("/root/GameState")
+
+
+## Resolves EventBus via Engine singleton first to allow test-time mock injection.
+func _event_bus() -> Node:
+	if Engine.has_singleton("EventBus"):
+		return Engine.get_singleton("EventBus")
+	return get_node_or_null("/root/EventBus")
+
+
+## Resolves RabbitSystem via Engine singleton first to allow test-time mock injection.
+func _rabbit_sys() -> Node:
+	if Engine.has_singleton("RabbitSystem"):
+		return Engine.get_singleton("RabbitSystem")
+	return get_node_or_null("/root/RabbitSystem")
+
+
+## Resolves TimeManager via Engine singleton first to allow test-time mock injection.
+func _time_mgr() -> Node:
+	if Engine.has_singleton("TimeManager"):
+		return Engine.get_singleton("TimeManager")
+	return get_node_or_null("/root/TimeManager")
 
 
 ## Loads habitat balance values from balance.json. Falls back to defaults on failure.
@@ -59,17 +90,20 @@ func _load_balance_data() -> void:
 ## Ticked by TimeManager.tick each second. Decays cleanliness on all occupied hutches.
 ## Empty hutches are skipped. GameState.mark_dirty() called once after all updates.
 func _on_tick(delta: float) -> void:
-	for hutch: HutchData in GameState.hutches:
+	var gs: Node = _gs()
+	var eb: Node = _event_bus()
+	for hutch: HutchData in gs.hutches:
 		if hutch.occupants.is_empty():
 			continue
 		hutch.cleanliness -= _decay_rate * delta
 		hutch.cleanliness = clampf(hutch.cleanliness, 0.0, 1.0)
-		EventBus.hutch_cleanliness_changed.emit(hutch.hutch_id, hutch.cleanliness)
-	GameState.mark_dirty()
+		eb.hutch_cleanliness_changed.emit(hutch.hutch_id, hutch.cleanliness)
+	gs.mark_dirty()
 
 
 func assign_rabbit(rabbit_id: String, hutch_id: String) -> bool:
-	var rabbit: RabbitData = RabbitSystem.get_rabbit(rabbit_id)
+	var rs: Node = _rabbit_sys()
+	var rabbit: RabbitData = rs.get_rabbit(rabbit_id)
 	if rabbit == null:
 		return false
 
@@ -84,20 +118,23 @@ func assign_rabbit(rabbit_id: String, hutch_id: String) -> bool:
 		return false
 
 	hutch.occupants.append(rabbit_id)
-	RabbitSystem.set_hutch_id(rabbit_id, hutch_id)
-	GameState.mark_dirty()
-	EventBus.rabbit_assigned_to_hutch.emit(rabbit_id, hutch_id)
+	rs.set_hutch_id(rabbit_id, hutch_id)
+	_gs().mark_dirty()
+	_event_bus().rabbit_assigned_to_hutch.emit(rabbit_id, hutch_id)
 	return true
 
 
 func remove_rabbit(rabbit_id: String) -> bool:
-	for hutch: HutchData in GameState.hutches:
+	var gs: Node = _gs()
+	var rs: Node = _rabbit_sys()
+	var eb: Node = _event_bus()
+	for hutch: HutchData in gs.hutches:
 		var idx: int = hutch.occupants.find(rabbit_id)
 		if idx != -1:
 			hutch.occupants.remove_at(idx)
-			RabbitSystem.set_hutch_id(rabbit_id, "")
-			GameState.mark_dirty()
-			EventBus.rabbit_assigned_to_hutch.emit(rabbit_id, "")
+			rs.set_hutch_id(rabbit_id, "")
+			gs.mark_dirty()
+			eb.rabbit_assigned_to_hutch.emit(rabbit_id, "")
 			return true
 	return false
 
@@ -135,14 +172,14 @@ func get_capacity(hutch_id: String) -> int:
 
 
 func _find_hutch(hutch_id: String) -> HutchData:
-	for hutch: HutchData in GameState.hutches:
+	for hutch: HutchData in _gs().hutches:
 		if hutch.hutch_id == hutch_id:
 			return hutch
 	return null
 
 
 func _is_rabbit_assigned(rabbit_id: String) -> bool:
-	for hutch: HutchData in GameState.hutches:
+	for hutch: HutchData in _gs().hutches:
 		if hutch.occupants.has(rabbit_id):
 			return true
 	return false
