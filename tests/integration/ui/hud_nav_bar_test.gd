@@ -15,6 +15,10 @@ class MockEconomyManager extends Node:
 class MockEventBus extends Node:
 	signal currency_changed(currency: int, new_balance: int, delta: int)
 	signal nav_tab_pressed(tab: int)
+	signal notification_requested(text: String, duration_sec: float)
+	signal food_harvested(food_id: String, quantity: int)
+	signal food_used(food_id: String)
+	signal farm_plots_updated()
 
 	var nav_tab_pressed_calls: Array[int] = []
 
@@ -31,18 +35,34 @@ class MockEventBus extends Node:
 
 var _mock_economy: MockEconomyManager
 var _mock_event_bus: MockEventBus
+var _orig_economy: Object = null
+var _orig_event_bus: Object = null
 
 func before_test() -> void:
 	_mock_economy = MockEconomyManager.new()
 	_mock_event_bus = MockEventBus.new()
 	add_child(_mock_economy)
 	add_child(_mock_event_bus)
+	_orig_economy = Engine.get_singleton("EconomyManager") if Engine.has_singleton("EconomyManager") else null
+	if Engine.has_singleton("EconomyManager"):
+		Engine.unregister_singleton("EconomyManager")
 	Engine.register_singleton("EconomyManager", _mock_economy)
+	_orig_event_bus = Engine.get_singleton("EventBus") if Engine.has_singleton("EventBus") else null
+	if Engine.has_singleton("EventBus"):
+		Engine.unregister_singleton("EventBus")
 	Engine.register_singleton("EventBus", _mock_event_bus)
 
 func after_test() -> void:
-	Engine.unregister_singleton("EconomyManager")
-	Engine.unregister_singleton("EventBus")
+	if Engine.has_singleton("EconomyManager"):
+		Engine.unregister_singleton("EconomyManager")
+	if _orig_economy != null:
+		Engine.register_singleton("EconomyManager", _orig_economy)
+	_orig_economy = null
+	if Engine.has_singleton("EventBus"):
+		Engine.unregister_singleton("EventBus")
+	if _orig_event_bus != null:
+		Engine.register_singleton("EventBus", _orig_event_bus)
+	_orig_event_bus = null
 	_mock_economy.queue_free()
 	_mock_event_bus.queue_free()
 
@@ -72,6 +92,10 @@ func _build_hud() -> HUD:
 	hud.guild_button = guild_btn
 	hud.shop_button = shop_btn
 	hud.quest_button = quest_btn
+	var notif_container: Control = Control.new()
+	var notif_label: Label = Label.new()
+	hud.notification_container = notif_container
+	hud.notification_label = notif_label
 	add_child(hud)
 	hud.add_child(cc_lbl)
 	hud.add_child(gem_lbl)
@@ -80,6 +104,8 @@ func _build_hud() -> HUD:
 	hud.add_child(guild_btn)
 	hud.add_child(shop_btn)
 	hud.add_child(quest_btn)
+	notif_container.add_child(notif_label)
+	hud.add_child(notif_container)
 	return hud
 
 

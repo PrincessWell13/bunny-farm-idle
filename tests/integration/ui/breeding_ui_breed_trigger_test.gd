@@ -33,6 +33,7 @@ class MockGeneticsSystem extends Node:
 
 class MockEventBus extends Node:
 	signal breed_requested(parent_a_id: String, parent_b_id: String)
+	signal rabbit_born(rabbit_id: String)
 	var breed_requested_calls: Array = []
 
 	func _init() -> void:
@@ -49,6 +50,9 @@ class MockEventBus extends Node:
 var _mock_rabbit_system: MockRabbitSystem
 var _mock_genetics_system: MockGeneticsSystem
 var _mock_event_bus: MockEventBus
+var _orig_rabbit_system: Object = null
+var _orig_genetics_system: Object = null
+var _orig_event_bus: Object = null
 
 func before_test() -> void:
 	_mock_rabbit_system = MockRabbitSystem.new()
@@ -57,14 +61,35 @@ func before_test() -> void:
 	add_child(_mock_rabbit_system)
 	add_child(_mock_genetics_system)
 	add_child(_mock_event_bus)
+	_orig_rabbit_system = Engine.get_singleton("RabbitSystem") if Engine.has_singleton("RabbitSystem") else null
+	if Engine.has_singleton("RabbitSystem"):
+		Engine.unregister_singleton("RabbitSystem")
 	Engine.register_singleton("RabbitSystem", _mock_rabbit_system)
+	_orig_genetics_system = Engine.get_singleton("GeneticsSystem") if Engine.has_singleton("GeneticsSystem") else null
+	if Engine.has_singleton("GeneticsSystem"):
+		Engine.unregister_singleton("GeneticsSystem")
 	Engine.register_singleton("GeneticsSystem", _mock_genetics_system)
+	_orig_event_bus = Engine.get_singleton("EventBus") if Engine.has_singleton("EventBus") else null
+	if Engine.has_singleton("EventBus"):
+		Engine.unregister_singleton("EventBus")
 	Engine.register_singleton("EventBus", _mock_event_bus)
 
 func after_test() -> void:
-	Engine.unregister_singleton("RabbitSystem")
-	Engine.unregister_singleton("GeneticsSystem")
-	Engine.unregister_singleton("EventBus")
+	if Engine.has_singleton("RabbitSystem"):
+		Engine.unregister_singleton("RabbitSystem")
+	if _orig_rabbit_system != null:
+		Engine.register_singleton("RabbitSystem", _orig_rabbit_system)
+	_orig_rabbit_system = null
+	if Engine.has_singleton("GeneticsSystem"):
+		Engine.unregister_singleton("GeneticsSystem")
+	if _orig_genetics_system != null:
+		Engine.register_singleton("GeneticsSystem", _orig_genetics_system)
+	_orig_genetics_system = null
+	if Engine.has_singleton("EventBus"):
+		Engine.unregister_singleton("EventBus")
+	if _orig_event_bus != null:
+		Engine.register_singleton("EventBus", _orig_event_bus)
+	_orig_event_bus = null
 	_mock_rabbit_system.queue_free()
 	_mock_genetics_system.queue_free()
 	_mock_event_bus.queue_free()
@@ -109,6 +134,9 @@ func _build_ui() -> BreedingUI:
 	var rarity_lbl: Label = Label.new()
 	var mutation_lbl: Label = Label.new()
 	var colour_lbl: Label = Label.new()
+	var close_btn: Button = Button.new()
+	var reveal_panel: Control = Control.new()
+	var stats_container: Control = Control.new()
 
 	ui.rabbit_list_container = container
 	ui.breed_button = breed_btn
@@ -117,6 +145,9 @@ func _build_ui() -> BreedingUI:
 	ui.preview_rarity_label = rarity_lbl
 	ui.preview_mutation_label = mutation_lbl
 	ui.preview_colour_label = colour_lbl
+	ui.close_button = close_btn
+	ui.reveal_panel = reveal_panel
+	ui.stats_container = stats_container
 
 	add_child(ui)
 	ui.add_child(container)
@@ -126,6 +157,9 @@ func _build_ui() -> BreedingUI:
 	ui.add_child(rarity_lbl)
 	ui.add_child(mutation_lbl)
 	ui.add_child(colour_lbl)
+	ui.add_child(close_btn)
+	ui.add_child(reveal_panel)
+	reveal_panel.add_child(stats_container)
 	return ui
 
 

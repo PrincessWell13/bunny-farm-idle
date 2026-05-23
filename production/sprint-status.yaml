@@ -43,7 +43,7 @@ stories:
     name: "Confirm CI green badge (C04-05)"
     file: ""
     priority: must-have
-    status: ready-for-dev
+    status: in-progress
     owner: "devops-engineer"
     estimate_days: 0.25
     blocker: ""

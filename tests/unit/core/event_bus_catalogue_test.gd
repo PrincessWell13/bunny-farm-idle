@@ -1,4 +1,4 @@
-## Tests that EventBus declares all 23 required signals with typed parameters.
+## Tests that EventBus declares all 32 required signals with typed parameters.
 ## Story: production/epics/event-bus/story-001-signal-catalogue.md
 ## Does NOT test emit/connect behaviour — see story-002-connect-emit-disconnect.
 extends GdUnitTestSuite
@@ -16,25 +16,27 @@ func after_test() -> void:
 	_event_bus = null
 
 
-func test_all_23_signals_present() -> void:
+func test_all_required_signals_present() -> void:
 	var expected: Array[String] = [
 		"rabbit_born", "rabbit_matured", "rabbit_stat_changed", "rabbit_died",
 		"currency_changed",
 		"production_ticked",
 		"breed_requested", "breeding_completed",
-		"hutch_dirtied", "hutch_upgraded", "rabbit_assigned_to_hutch",
-		"expedition_completed",
+		"hutch_dirtied", "hutch_upgraded", "rabbit_assigned_to_hutch", "hutch_cleanliness_changed",
+		"expedition_started", "expedition_completed", "expedition_collected",
+		"rabbit_sent_on_expedition", "rabbit_returned_from_expedition", "expedition_ready_to_collect",
 		"save_requested", "save_synced", "new_game_started",
 		"nav_tab_pressed", "notification_requested",
 		"season_changed", "event_activated", "merchant_appeared",
 		"prestige_executed",
 		"guild_contribution_submitted", "guild_boss_attacked",
+		"food_harvested", "food_used", "farm_plots_updated",
 	]
 	for signal_name: String in expected:
 		assert_bool(_event_bus.has_signal(signal_name)).is_true()
 
 
-func test_signal_count_is_23() -> void:
+func test_signal_count_is_32() -> void:
 	# Collect built-in Node signal names once to filter them out.
 	var builtin_node: Node = Node.new()
 	var builtin_names: Array[String] = []
@@ -46,7 +48,7 @@ func test_signal_count_is_23() -> void:
 		func(s: Dictionary) -> bool:
 			return not (s["name"] in builtin_names)
 	)
-	assert_int(custom_signals.size()).is_equal(23)
+	assert_int(custom_signals.size()).is_equal(32)
 
 
 func test_no_variant_parameters() -> void:

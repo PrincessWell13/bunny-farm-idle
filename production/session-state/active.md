@@ -894,3 +894,15 @@ Sau khi có 8 ADRs này → chạy `/create-epics`
 - Remaining must-have: S05-04 (CI badge — human action required)
 - Advisory open items: Autumn dominant strategy, prestige bonus size, Tier3→4 ramp, missing Cliffs 2 and 4
 - Next recommended: S05-04 (CI badge, human-side) then sprint close-out sequence
+
+## Session Extract — CI test failure triage 2026-05-23
+- CI run: 373 tests, 96 errors, 144 failures, exit 100 (tests ran, parse errors resolved)
+- Root causes identified and fixed (4 files):
+  1. `event_bus_catalogue_test.gd`: signal count hardcoded at 23, actual 32 — updated list + count
+  2. `hud_currency_display_test.gd`: missing unregister-first (mock never injected), MockEventBus missing 4 signals, _build_hud missing nav buttons + notification nodes → null crash in _ready()
+  3. `hud_nav_bar_test.gd`: same unregister issue + missing signals + missing notification nodes
+  4. `breeding_ui_breed_trigger_test.gd`: missing unregister-first + no orig restore, MockEventBus missing rabbit_born signal, _build_ui missing close_button/reveal_panel/stats_container → null crash in BreedingUI._ready()
+- Fix pattern: all affected tests now follow save-original → unregister → register-mock → restore-original
+- Estimated impact: ~30 tests fixed (event_bus:1, HUD:18, BreedingUI:11)
+- Remaining 210 failures: likely functional issues in other systems — push to CI to re-assess
+- Next: push fixes to GitHub, watch CI re-run, triage remaining failures
